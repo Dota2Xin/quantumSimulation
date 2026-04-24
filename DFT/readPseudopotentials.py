@@ -7,9 +7,19 @@ def initUPF(element):
     print(dict)
     for key in dict:
         print(key)
-    print(dict['full_wfc'])
-    for key in dict['full_wfc']:
-        print(key)
-    print(dict['full_wfc']['aewfc'])
-    print(dict['full_wfc']['number_of_wfc'])
-    print(dict['full_wfc']['pswfc'])
+    print(dict['mesh'])
+    print(getRadius(dict))
+    print(getRadiusDiff(dict))
+    print("--------BREAK--------")
+    print(dict['pswfc'])
+    print(dict['pwsfc']['chi'])
+    print("--------BREAK--------")
+
+    print(dict['paw'])
+
+def getRadius(dict):
+    return dict['mesh']['r']
+
+def getRadiusDiff(dict):
+    return dict['mesh']['rab']
+
