@@ -8,6 +8,7 @@ def testUPF(element):
     for key in dict:
         print(key)
     #START WORKING ON GETTING PROJECTORS
+    print(dict['nonlocal'])
     '''
     print(dict['mesh'])
     print(len(getRadius(dict)))
