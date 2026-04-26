@@ -1,4 +1,5 @@
 import numpy as np
+import scipy as sc
 from readPseudopotentials import *
 
 
@@ -39,4 +40,14 @@ def kineticEnergyIntegral(content1,m1, l1,content2,m2, l2, rGrid, drGrid):
     integrand1=(np.diff(content1)/np.diff(rGrid))*(np.diff(content2)/np.diff(rGrid))
     term1=np.sum(integrand1*np.diff(rGrid))
     return 0.5*(term1+term2)
+
+def projectorPWCalc(qGrid, mask, beta, l,m):
+
+    return 0
+
+def projectorPWIntegral(r, rab, beta, q, l):
+    arg=r*q
+    func=sc.special.spherical_jn(l,arg)
+    return np.sum(rab*r*r*beta*func)
+
 
