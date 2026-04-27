@@ -12,7 +12,7 @@ def blockDavidson(args):
 
 #a test of the general algorithm on small matrices that we know already
 def blockDavidsonTest(H,S, l,m):
-    epsilon=0
+    epsilon=0.5
     V=np.eye(len(H))[0:l]
     V=V.transpose()
     ritz, eigval, res= blockDavidsonIterTest(H,S,V)
@@ -26,6 +26,7 @@ def blockDavidsonTest(H,S, l,m):
     V=sOrthoTest(V,S,ritz, T, eigval,m,l)
 
     while np.linalg.norm(res)>=1e-1:
+        print("HI")
         ritz, eigval, res = blockDavidsonIterTest(H, S, V)
         C = np.linalg.inv(np.eye(len(H)) - epsilon*np.eye(len(H)) * H)
         T = C @ res
@@ -52,12 +53,27 @@ def blockDavidsonIterTest(H,S,V):
     return ritz,eigval, res
 
 def sOrthoTest(V,S,ritz, T, eigval,m,l):
+    GS=S@T
+    GS=np.transpose(V)@GS
+    A=(np.transpose(V)@S@V)
+    GS=GS/A[:, np.newaxis]
+    GS=V@GS
+    TNew=T-GS
+    norms=np.transpose(TNew)@S@TNew
+    norms=np.sqrt(np.max(norms, 0))
+
+    tol=1e-8
+    keep=norms>tol
+    TFilt=TNew[:, keep]
+    norms=norms[keep]
+    TFilt=TFilt/norms
+
     if (len(V[0]) > m - l):
         sortedEig = np.argsort(eigval)
         lowEigs = ritz[:, sortedEig]
-        VNew = np.concatenate((lowEigs, T), axis=1)
+        VNew = np.concatenate((lowEigs, TFilt), axis=1)
     else:
-        VNew = np.concatenate((V, T), axis=1)
+        VNew = np.concatenate((V, TFilt), axis=1)
 
     # now we have to S-orthonormalize V
     B = np.transpose(VNew) @ S @ VNew
