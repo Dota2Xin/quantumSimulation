@@ -60,11 +60,11 @@ def blockDavidsonIterTest(H,S,V):
     L = np.linalg.cholesky(Sk)
     Hk2 = (np.linalg.inv(L)) @ Hk @ (np.linalg.inv(np.transpose(L)))
 
-    eigval, eigvec = np.linalg.eig(Hk2)
+    eigval, eigvec = np.linalg.eigh(Hk2)
 
-    idx = np.argsort(eigval)
-    eigval = eigval[idx]
-    eigvec = eigvec[:, idx]
+    #idx = np.argsort(eigval)
+    #eigval = eigval[idx]
+    #eigvec = eigvec[:, idx]
 
     realeig = (np.linalg.inv(np.transpose(L))) @ eigvec
 
@@ -72,30 +72,27 @@ def blockDavidsonIterTest(H,S,V):
     res = (S @ ritz) @ np.diag(eigval) - H @ ritz
     return ritz,eigval, res
 
-def grahamSchmidt(V,S,T,tol):
-    TNew=T.copy()
-    keep=[]
-    for i in range(len(T[0])):
-        currT=TNew[:, i]
-        for j in range(len(V[0])):
-            currV=V[:,j]
-            dij=currV.T@S@currT
-            currT-=currV*dij
+def grahamSchmidt(V, S, T, tol):
+    TNew = T.copy()
+    keep = []
+    for i in range(T.shape[1]):
+        currT = TNew[:, i].copy()
 
-        for j in range(i):
-            oldT=TNew[:,j]
-            dij=oldT.T@S@currT
-            currT-=oldT*dij
+        # Two passes for numerical stability (re-orthogonalization)
+        for _ in range(2):
+            for j in range(V.shape[1]):
+                currV = V[:, j]
+                currT -= currV * (currV.T @ S @ currT)
+            for j in keep:        # only previously accepted columns
+                oldT = TNew[:, j]
+                currT -= oldT * (oldT.T @ S @ currT)
 
-        norm=np.sqrt(currT.T@S@currT)
-        if norm>=tol:
+        norm = np.sqrt(currT.T @ S @ currT)
+        if norm >= tol:
             keep.append(i)
-            currT = currT / norm
-            TNew[:, i] = currT
-        else:
-            TNew[:,i]=0
-    return TNew, keep
+            TNew[:, i] = currT / norm
 
+    return TNew, keep
 '''
 def sOrthoTest(V,S,ritz, T, eigval,m,l):
     tol=1e-8
@@ -155,7 +152,8 @@ def sOrthoTest(V, S, ritz, T, eigval, m, l):
 
     # Step D: Back-transform to the original space
     # V_final = VNew @ inv(R)
-    V_final = VNew @ inv(R_upper)
+    V_final = np.linalg.solve(L.T, Q_orth)
+
 
     return V_final
 
@@ -163,7 +161,7 @@ def getExact(H,S):
     L = np.linalg.cholesky(S)
     H2 = (np.linalg.inv(L)) @ H @ (np.linalg.inv(np.transpose(L)))
 
-    eigval, eigvec = np.linalg.eig(H2)
+    eigval, eigvec = np.linalg.eigh(H2)
     realeig=(np.linalg.inv(np.transpose(L))) @ eigvec
 
     return eigval, realeig
