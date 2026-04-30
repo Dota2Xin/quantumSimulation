@@ -12,44 +12,37 @@ def blockDavidson(args):
     return 0
 
 #a test of the general algorithm on small matrices that we know already
-def blockDavidsonTest(H,S, l,m):
-    epsilon=0
+def blockDavidsonTest(H, S, l, m):
     V = np.random.rand(len(H), l)
-    # But we MUST S-normalize it before the first iteration
     B = V.T @ S @ V
     Q = np.linalg.cholesky(B)
     V = V @ np.linalg.inv(Q.T)
-    ritz, eigval, res= blockDavidsonIterTest(H,S,V)
+    ritz, eigval, res = blockDavidsonIterTest(H, S, V)
 
-    if np.linalg.norm(res)<=1e-1:
-        sortedEig = np.argsort(eigval)
-        return eigval[sortedEig], ritz[:,sortedEig]
+    # Bug 1 fix: only check l target residuals
+    if np.linalg.norm(res[:, :l]) <= 1e-1:
+        return eigval[:l], ritz[:, :l]
 
-    #C = np.linalg.inv(np.eye(len(H)) - epsilon*np.eye(len(H)) * H)
     h_diag = np.diag(H)
     s_diag = np.diag(S)
-    denom = h_diag[:, np.newaxis] - s_diag[:, np.newaxis] * eigval
+    # Bug 2 fix: only compute l correction vectors
+    denom = h_diag[:, np.newaxis] - s_diag[:, np.newaxis] * eigval[:l]
     tol = 1e-5
     denom = np.where(np.abs(denom) < tol, tol * np.sign(denom + 1e-16), denom)
-    T = res/denom
-    V=sOrthoTest(V,S,ritz, T, eigval,m,l)
+    T = res[:, :l] / denom
+    V = sOrthoTest(V, S, ritz, T, eigval, m, l)
 
-    while np.linalg.norm(res)>=1e-1:
-        print("HI")
-        print(np.linalg.norm(res))
+    while np.linalg.norm(res[:, :l]) >= 1e-1:  # Bug 1 fix
         ritz, eigval, res = blockDavidsonIterTest(H, S, V)
-        #C = np.linalg.inv(np.eye(len(H)) - epsilon*np.eye(len(H)) * H)
-        #T = C @ res
         h_diag = np.diag(H)
         s_diag = np.diag(S)
-        denom = h_diag[:, np.newaxis] - s_diag[:, np.newaxis] * eigval
+        denom = h_diag[:, np.newaxis] - s_diag[:, np.newaxis] * eigval[:l]  # Bug 2 fix
         tol = 1e-5
         denom = np.where(np.abs(denom) < tol, tol * np.sign(denom + 1e-16), denom)
-        T = res / denom
-        V = sOrthoTest(V,S,ritz, T, eigval, m, l)
+        T = res[:, :l] / denom  # Bug 2 fix
+        V = sOrthoTest(V, S, ritz, T, eigval, m, l)
 
-    sortedEig=np.argsort(eigval)
-    return eigval[sortedEig], ritz[:,sortedEig]
+    return eigval[:l], ritz[:, :l]
 
 def blockDavidsonIterTest(H,S,V):
     W = H @ V
