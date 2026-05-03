@@ -65,3 +65,8 @@ def actHamiltonian(state, V,qGridSmall, k):
     #            outState[i][j][k]=np.sum(V[i:i+len(state)][j:j+len(state[0])][k:k+len(state[0][0])]*state)
     outState+=0.5*np.linalg.norm((qGridSmall+k), axis=-1)
     return outState
+
+#solves the Schrodinger equation in our SCF loop given an initial density
+#creates all the operators and then calls block-davidson to diagonalize everything.
+def solveSchrodinger(args):
+    return 0

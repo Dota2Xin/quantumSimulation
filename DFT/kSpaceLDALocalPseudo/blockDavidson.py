@@ -1,14 +1,19 @@
 import numpy as np
 from scipy.linalg import qr, inv
 
-def actHamiltonian(args,vec):
+#version where we assume S=I, and we have an actHamiltonian that can act on a vector
+def blockDavidson(l,m,stateSize, actHamiltonian, hamiltonianArgs):
+    #have to deal with fact vectors are 3D grid, einsum?
+    V=np.random.rand(stateSize,l)
     return 0
 
-def actOverlap(args, vec):
+#use fact that we act on vectors to create matmul between Hamiltonian and matrix of column vectors
+#we just have to note that vectors are 3D grid now and work with that
+def matmul(A, actHamiltonian, hamiltonianArgs):
     return 0
 
-def blockDavidson(args):
-
+#do block davidson iteration but with our hamiltonian action and understanding
+def blockDavidsonIter(V, actHamiltonian, hamiltonianArg):
     return 0
 
 #a test of the general algorithm on small matrices that we know already

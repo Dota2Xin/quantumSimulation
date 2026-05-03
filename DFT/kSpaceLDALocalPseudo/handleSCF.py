@@ -60,3 +60,8 @@ def calcDensity(psi,n1,n2,n3):
     density=np.fft.fftshift(density)
 
     return density
+
+#performs the main SCF loop to get final kohn-sham states/energies and final DFT ground state energy for the
+#prescribed state.
+def mainSCFLoop(initialConditions):
+    return 0
