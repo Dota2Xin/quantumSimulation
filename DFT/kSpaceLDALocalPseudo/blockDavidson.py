@@ -1,20 +1,36 @@
 import numpy as np
 from scipy.linalg import qr, inv
 
+#ASSUME ACTHAMILTONIAN ACTS ON OUR RESHAPED PSI
+
 #version where we assume S=I, and we have an actHamiltonian that can act on a vector
 def blockDavidson(l,m,stateSize, actHamiltonian, hamiltonianArgs):
     #have to deal with fact vectors are 3D grid, einsum?
-    V=np.random.rand(stateSize,l)
-    return 0
+    V = np.random.rand(stateSize, l)
+    B = V.T@V
+    Q = np.linalg.cholesky(B)
+    V = V @ np.linalg.inv(Q.T)
+    ritz, eigval, res = blockDavidsonIter(V, actHamiltonian, hamiltonianArgs)
 
+    # Bug 1 fix: only check l target residuals
+    if np.linalg.norm(res[:, :l]) <= 1e-1:
+        return eigval[:l], ritz[:, :l]
+
+    return eigval[:l], ritz[:, :l]
+
+def applyPreconditioner(V, actHamiltonian, hamiltonianArgs):
+    return 0
 #use fact that we act on vectors to create matmul between Hamiltonian and matrix of column vectors
 #we just have to note that vectors are 3D grid now and work with that
-def matmul(A, actHamiltonian, hamiltonianArgs):
-    return 0
+def hamiltonianMatmul(A, actHamiltonian, hamiltonianArgs):
+    B=np.copy(A)
+    for i in range(len(A)):
+        B[i]=actHamiltonian(A[i], hamiltonianArgs)
+    return B
 
-#do block davidson iteration but with our hamiltonian action and understanding
-def blockDavidsonIter(V, actHamiltonian, hamiltonianArg):
-    return 0
+def dotVecs(state1, state2):
+    return np.sum(state1*state2)
+
 
 #a test of the general algorithm on small matrices that we know already
 def blockDavidsonTest(H, S, l, m):
@@ -49,6 +65,18 @@ def blockDavidsonTest(H, S, l, m):
 
     return eigval[:l], ritz[:, :l]
 
+#do block davidson iteration but with our hamiltonian action and understanding
+def blockDavidsonIter(V, actHamiltonian, hamiltonianArgs):
+    W = actHamiltonian(V, hamiltonianArgs)
+    Hk = np.transpose(V) @ W
+
+    eigval, eigvec = np.linalg.eigh(Hk)
+
+    ritz = V @ eigvec
+    res = ritz@np.diag(eigval) - actHamiltonian(ritz, hamiltonianArgs)
+    return ritz, eigval, res
+
+
 def blockDavidsonIterTest(H,S,V):
     W = H @ V
     Hk = np.transpose(V) @ W
@@ -70,7 +98,29 @@ def blockDavidsonIterTest(H,S,V):
     res = (S @ ritz) @ np.diag(eigval) - H @ ritz
     return ritz,eigval, res
 
-def grahamSchmidt(V, S, T, tol):
+def grahamSchmidt(V, T, tol):
+    TNew = T.copy()
+    keep = []
+    for i in range(T.shape[1]):
+        currT = TNew[:, i].copy()
+
+        # Two passes for numerical stability (re-orthogonalization)
+        for _ in range(2):
+            for j in range(V.shape[1]):
+                currV = V[:, j]
+                currT -= currV * (currV.T @ currT)
+            for j in keep:        # only previously accepted columns
+                oldT = TNew[:, j]
+                currT -= oldT * (oldT.T @currT)
+
+        norm = np.sqrt(currT.T @ currT)
+        if norm >= tol:
+            keep.append(i)
+            TNew[:, i] = currT / norm
+
+    return TNew, keep
+
+def grahamSchmidtTest(V, S, T, tol):
     TNew = T.copy()
     keep = []
     for i in range(T.shape[1]):
@@ -91,40 +141,26 @@ def grahamSchmidt(V, S, T, tol):
             TNew[:, i] = currT / norm
 
     return TNew, keep
-'''
-def sOrthoTest(V,S,ritz, T, eigval,m,l):
+
+def sOrtho(V, ritz, T, m, l):
     tol=1e-8
-    TNew, keep =grahamSchmidt(V,S,T, tol)
+    TNew,keep=grahamSchmidt(V, T, tol)
+    TFilt=TNew[:,keep]
 
-    TFilt=TNew[:, keep]
-
-    if (len(V[0]) > m - l):
-        sortedEig = np.argsort(eigval)[0:l]
-        lowEigs = ritz[:, sortedEig]
-        VNew = np.concatenate((lowEigs, TFilt), axis=1)
+    if (V.shape[1] + TFilt.shape[1] > m):
+        # Subspace too big: keep the 'l' best Ritz vectors
+        # Note: ritz should already be sorted by your calling function
+        VNew = np.concatenate((ritz[:, :l], TFilt), axis=1)
     else:
+        # Subspace has room: just add the new directions
         VNew = np.concatenate((V, TFilt), axis=1)
 
-    # now we have to S-orthonormalize V
-    #B = np.transpose(VNew) @ S @ VNew
-    #B+=np.eye(len(B))*(1e-13)
-    #Q = np.linalg.cholesky(B)
-    #VNew=VNew@(np.linalg.inv(np.transpose(Q)))
-    h = VNew.T @ (S @ VNew)
-    t_orthogonal = VNew - VNew @ h
-
-    # 2. Normalize with respect to S-norm
-    # norm = sqrt(t_orth^T S t_orth)
-    norm = np.sqrt(t_orthogonal.T @ S @ t_orthogonal)
-
-    return VNew/norm
-'''
-
+    return VNew
 
 def sOrthoTest(V, S, ritz, T, eigval, m, l):
     tol = 1e-8
     # 1. Standardize T using your GS function to remove noise
-    TNew, keep = grahamSchmidt(V, S, T, tol)
+    TNew, keep = grahamSchmidtTest(V, S, T, tol)
     TFilt = TNew[:, keep]
 
     # 2. Manage the Subspace (Thick Restart)
