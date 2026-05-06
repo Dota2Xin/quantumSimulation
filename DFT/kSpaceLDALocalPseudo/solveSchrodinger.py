@@ -1,4 +1,4 @@
-
+from blockDavidson import *
 import math
 import numpy as np
 from scipy.signal import fftconvolve
@@ -57,7 +57,7 @@ def getPotential(qGridBig,density, atomicPositions, atomicNumbers, rC, cellVol):
     return getExchangeCorrelation(density)+getExternalPotential(qGridBig, atomicPositions, atomicNumbers, rC, cellVol)+calcHartree(density, qGridBig)
 
 def actHamiltonian(state, V,qGridSmall, k):
-    outState=np.copy(state)
+    #outState=np.copy(state)
     outState=fftconvolve(V, state[::-1, ::-1, ::-1], mode='valid')
     #for i in range(len(outState)):
     #    for j in range(len(outState[0])):
@@ -66,8 +66,16 @@ def actHamiltonian(state, V,qGridSmall, k):
     outState+=0.5*np.linalg.norm((qGridSmall+k), axis=-1)*state
     return outState
 
-
 #solves the Schrodinger equation in our SCF loop given an initial density
 #creates all the operators and then calls block-davidson to diagonalize everything.
-def solveSchrodinger(args):
+def solveSchrodinger(*args):
+    density=args[0]
+    smallGrid=args[1]
+    bigGrid=args[2]
+    atomicPositions=args[3]
+    atomicNumbers=args[4]
+    rC=args[5]
+    cellVol=args[6]
+
+
     return 0

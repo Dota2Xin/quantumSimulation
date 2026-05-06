@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from solveSchrodinger import *
 
 def makeSmallGrid(ecutwfc, reciprocalVecs):
     n1=math.ceil(np.sqrt(ecutwfc)/np.linalg.norm(reciprocalVecs[:,0]))+1
@@ -61,10 +62,8 @@ def calcDensity(psi,n1,n2,n3):
 
     return density
 
-#performs the main SCF loop to get final kohn-sham states/energies and final DFT ground state energy for the
-#prescribed state.
-def solveSchrodinger(*args):
-    return 0
+def getStartingDensity(bigGrid):
+    return np.linalg.norm(bigGrid, axis=-1)
 
 def getOccupations(*args):
     return [0]
@@ -83,6 +82,9 @@ def mainSCFLoop(initialConditions):
 
     latticeVecs=initialConditions['latticeVecs']
     reciprocalVecs=np.linalg.solve(latticeVecs.T, 2*np.pi*np.eye(3))
+    cellVol=np.linalg.det(latticeVecs)
+
+    rC=initialConditions['rC']
 
     smallGrid, n1,n2,n3=makeSmallGrid(ecutwfc, reciprocalVecs)
     bigGrid=makeBigGrid(ecutwfc, reciprocalVecs)
@@ -90,11 +92,22 @@ def mainSCFLoop(initialConditions):
     occupations=getOccupations(atomicNumbers, nBand)
 
     #add BZ loop later
-    wavefuncs, energies= solveSchrodinger(smallGrid, bigGrid, atomicPositions, atomicNumbers)
+    density=getStartingDensity(bigGrid)
+    relDiff = 1e5
+    tol = 1e-1
 
-    density=np.zeros((np.shape(bigGrid)[0], np.shape(bigGrid)[1], np.shape(bigGrid)[2]))
-    for i in range(len(occupations)):
-        density+=calcDensity(wavefuncs[i], n1,n2,n3)
+    #dict to make things more readable
+    solveSchrodingerInputDict={}
+    solveSchrodingerInputDict['density']=density
+    #fill out with rest of args as needed
 
-    #ADD THE FOLLOWING SCF STEPS HERE
-    return 0
+    while relDiff > tol:
+        wavefuncs, energies= solveSchrodinger(density, smallGrid, bigGrid, atomicPositions, atomicNumbers, rC, cellVol)
+        oldDensity=np.copy(density)
+        density=np.zeros_like(oldDensity)
+        for i in range(len(occupations)):
+            density+=calcDensity(wavefuncs[i], n1,n2,n3)
+
+        relDiff=np.linalg.norm(density-oldDensity)/np.linalg.norm(density)
+
+    return density
