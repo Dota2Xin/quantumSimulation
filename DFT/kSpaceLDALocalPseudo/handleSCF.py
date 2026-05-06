@@ -63,5 +63,38 @@ def calcDensity(psi,n1,n2,n3):
 
 #performs the main SCF loop to get final kohn-sham states/energies and final DFT ground state energy for the
 #prescribed state.
+def solveSchrodinger(*args):
+    return 0
+
+def getOccupations(*args):
+    return [0]
+
 def mainSCFLoop(initialConditions):
+    ecutwfc=initialConditions['ecutwfc']
+    atomicPositions=initialConditions['atomicPositions']
+    atomicNumbers=initialConditions['atomicNumbers']
+    atomicMasses=initialConditions['atomicMasses']
+
+    nBand=initialConditions['nBand']
+    bzSetting=initialConditions['bzSetting']
+
+    if bzSetting=="Grid":
+        bzGrid=initialConditions['bzGrid']
+
+    latticeVecs=initialConditions['latticeVecs']
+    reciprocalVecs=np.linalg.solve(latticeVecs.T, 2*np.pi*np.eye(3))
+
+    smallGrid, n1,n2,n3=makeSmallGrid(ecutwfc, reciprocalVecs)
+    bigGrid=makeBigGrid(ecutwfc, reciprocalVecs)
+
+    occupations=getOccupations(atomicNumbers, nBand)
+
+    #MAKE THIS A LOOP OVER THE BZ I THINK
+    wavefuncs, energies= solveSchrodinger(smallGrid, bigGrid, atomicPositions, atomicNumbers)
+
+    density=np.zeros((np.shape(bigGrid)[0], np.shape(bigGrid)[1], np.shape(bigGrid)[2]))
+    for i in range(len(occupations)):
+        density+=calcDensity(wavefuncs[i], n1,n2,n3)
+
+    #ADD THE FOLLOWING SCF STEPS HERE
     return 0
