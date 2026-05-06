@@ -89,7 +89,7 @@ def mainSCFLoop(initialConditions):
 
     occupations=getOccupations(atomicNumbers, nBand)
 
-    #MAKE THIS A LOOP OVER THE BZ I THINK
+    #add BZ loop later
     wavefuncs, energies= solveSchrodinger(smallGrid, bigGrid, atomicPositions, atomicNumbers)
 
     density=np.zeros((np.shape(bigGrid)[0], np.shape(bigGrid)[1], np.shape(bigGrid)[2]))

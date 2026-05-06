@@ -63,7 +63,7 @@ def actHamiltonian(state, V,qGridSmall, k):
     #    for j in range(len(outState[0])):
     #        for k in range(len(outState[0][0])):
     #            outState[i][j][k]=np.sum(V[i:i+len(state)][j:j+len(state[0])][k:k+len(state[0][0])]*state)
-    outState+=0.5*np.linalg.norm((qGridSmall+k), axis=-1)
+    outState+=0.5*np.linalg.norm((qGridSmall+k), axis=-1)*state
     return outState
 
 
