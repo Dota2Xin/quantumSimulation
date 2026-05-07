@@ -99,15 +99,23 @@ def mainSCFLoop(initialConditions):
     #dict to make things more readable
     solveSchrodingerInputDict={}
     solveSchrodingerInputDict['density']=density
+    solveSchrodingerInputDict['smallGrid']=smallGrid
+    solveSchrodingerInputDict['bigGrid']=bigGrid
+    solveSchrodingerInputDict['atomicPositions']=atomicPositions
+    solveSchrodingerInputDict['atomicNumbers']=atomicNumbers
+    solveSchrodingerInputDict['rC']=rC
+    solveSchrodingerInputDict['cellVol']=cellVol
+    solveSchrodingerInputDict['k']=0
+    solveSchrodingerInputDict['nBand']=nBand
     #fill out with rest of args as needed
 
     while relDiff > tol:
-        wavefuncs, energies= solveSchrodinger(density, smallGrid, bigGrid, atomicPositions, atomicNumbers, rC, cellVol)
+        wavefuncs, energies= solveSchrodinger(solveSchrodingerInputDict)
         oldDensity=np.copy(density)
         density=np.zeros_like(oldDensity)
         for i in range(len(occupations)):
             density+=calcDensity(wavefuncs[i], n1,n2,n3)
 
         relDiff=np.linalg.norm(density-oldDensity)/np.linalg.norm(density)
-
+        relDiff=tol/2
     return density

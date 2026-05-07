@@ -56,7 +56,7 @@ def getExchangeCorrelation(density):
 def getPotential(qGridBig,density, atomicPositions, atomicNumbers, rC, cellVol):
     return getExchangeCorrelation(density)+getExternalPotential(qGridBig, atomicPositions, atomicNumbers, rC, cellVol)+calcHartree(density, qGridBig)
 
-def actHamiltonian(state, V,qGridSmall, k):
+def actHamiltonianGrid(state, V,qGridSmall, k):
     #outState=np.copy(state)
     outState=fftconvolve(V, state[::-1, ::-1, ::-1], mode='valid')
     #for i in range(len(outState)):
@@ -66,16 +66,42 @@ def actHamiltonian(state, V,qGridSmall, k):
     outState+=0.5*np.linalg.norm((qGridSmall+k), axis=-1)*state
     return outState
 
+def actHamiltonianVec(state, hamiltonianArgs):
+    V=hamiltonianArgs['V']
+    qGridSmall=hamiltonianArgs['qGridSmall']
+    k=hamiltonianArgs['k']
+    #outState=np.copy(state)
+    gridShape = qGridSmall.shape[:-1]
+    stateWork=state.reshape(gridShape)
+    outState=fftconvolve(V, stateWork[::-1, ::-1, ::-1], mode='valid')
+    #for i in range(len(outState)):
+    #    for j in range(len(outState[0])):
+    #        for k in range(len(outState[0][0])):
+    #            outState[i][j][k]=np.sum(V[i:i+len(state)][j:j+len(state[0])][k:k+len(state[0][0])]*state)
+    outState+=0.5*np.linalg.norm((qGridSmall+k), axis=-1)*stateWork
+    return outState
+
+
 #solves the Schrodinger equation in our SCF loop given an initial density
 #creates all the operators and then calls block-davidson to diagonalize everything.
-def solveSchrodinger(*args):
-    density=args[0]
-    smallGrid=args[1]
-    bigGrid=args[2]
-    atomicPositions=args[3]
-    atomicNumbers=args[4]
-    rC=args[5]
-    cellVol=args[6]
+def solveSchrodinger(inputDict):
+    density=inputDict['density']
+    smallGrid=inputDict['smallGrid']
+    bigGrid=inputDict['bigGrid']
+    atomicPositions=inputDict['atomicPositions']
+    atomicNumbers=inputDict['atomicNumbers']
+    rC=inputDict['rC']
+    cellVol=inputDict['cellVol']
+    k=inputDict['k']
+    l=inputDict['nBand']
 
+    VPotential=getPotential(bigGrid,density,atomicPositions, atomicNumbers, rC, cellVol)
+    hamiltonianArgs={}
+    hamiltonianArgs['V']=VPotential
+    hamiltonianArgs['qGridSmall']=smallGrid
+    hamiltonianArgs['k']=k
 
-    return 0
+    stateSize=np.shape(smallGrid)
+    energies, eigenfuncs=blockDavidson(l, 3*l, stateSize, smallGrid, actHamiltonianVec, hamiltonianArgs)
+
+    return energies, eigenfuncs
