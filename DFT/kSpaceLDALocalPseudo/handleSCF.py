@@ -50,23 +50,35 @@ def padZeros(n1Arr, n2Arr, n3Arr, smallGrid):
 #assume k is given in basis of G vecs?
 #for bigger grids need to work with grid you'll get from doing the FFT twice (forward and back)
 
-def calcDensity(psi,n1,n2,n3):
+def calcDensity(psi,n1,n2,n3, cellVol):
     bigPsi=padZeros(n1,n2,n3, psi)
     bigPsi=np.fft.ifftshift(bigPsi)
+    nGrid=np.prod(bigPsi.shape)
 
-    realPsi=np.fft.ifftn(bigPsi)*np.prod(bigPsi.shape)
+    realPsi=np.fft.ifftn(bigPsi)*nGrid/cellVol
     realDensity=np.abs(realPsi)**2.0
 
-    density=np.fft.fftn(realDensity)/np.prod(realDensity.shape)
+    density=np.fft.fftn(realDensity)/nGrid
     density=np.fft.fftshift(density)
 
     return density
 
-def getStartingDensity(bigGrid):
-    return np.linalg.norm(bigGrid, axis=-1)
+def getStartingDensity(atomicNumbers, cellVol, bigGrid, n1, n2, n3):
+    total1=4*len(n1)+1
+    total2=4*len(n2)+1
+    total3=4*len(n3)+3
 
-def getOccupations(*args):
-    return [0]
+    half1=total1//2
+    half2=total2//2
+    half3=total3//2
+
+    density=np.zeros_like(bigGrid)
+
+    density[half1][half2][half3]=np.sum(atomicNumbers)/cellVol
+    return density
+
+def getOccupations(atomicNumbers):
+    return np.sum(atomicNumbers)
 
 def mainSCFLoop(initialConditions):
     ecutwfc=initialConditions['ecutwfc']
@@ -89,10 +101,10 @@ def mainSCFLoop(initialConditions):
     smallGrid, n1,n2,n3=makeSmallGrid(ecutwfc, reciprocalVecs)
     bigGrid=makeBigGrid(ecutwfc, reciprocalVecs)
 
-    occupations=getOccupations(atomicNumbers, nBand)
+    occupations=getOccupations(atomicNumbers)
 
     #add BZ loop later
-    density=getStartingDensity(bigGrid)
+    density=getStartingDensity(atomicNumbers,cellVol, bigGrid, n1, n2, n3)
     relDiff = 1e5
     tol = 1e-1
 
@@ -113,8 +125,8 @@ def mainSCFLoop(initialConditions):
         wavefuncs, energies= solveSchrodinger(solveSchrodingerInputDict)
         oldDensity=np.copy(density)
         density=np.zeros_like(oldDensity)
-        for i in range(len(occupations)):
-            density+=calcDensity(wavefuncs[i], n1,n2,n3)
+        for i in range(occupations):
+            density+=calcDensity(wavefuncs[i], n1,n2,n3, cellVol)
 
         relDiff=np.linalg.norm(density-oldDensity)/np.linalg.norm(density)
         relDiff=tol/2

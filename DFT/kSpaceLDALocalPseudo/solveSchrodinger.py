@@ -37,24 +37,27 @@ def corr2(x):
     return base+derivative
 
 def functionalLDA(realDensity):
-    exchange=(4/3)*(-3/4)*((6*realDensity/np.pi)**(1.0/3.0))
-    correlation=np.piecewise(realDensity, [realDensity<1, realDensity>=1], [corr1, corr2])
+    exchange=(-3/4)*((3*realDensity/np.pi)**(1.0/3.0))
+    rs = (3.0 / (4.0 * np.pi * (realDensity + 1e-12))) ** (1.0 / 3.0)
+    correlation=np.piecewise(rs, [rs<1, rs>=1], [corr1, corr2])
     return exchange+correlation
 
 #assumes it has a functional in real-space
 def getExchangeCorrelation(density):
+    NGrid=np.prod(density.shape)
+
     tempDensity=np.fft.ifftshift(density)
-    realDensity=np.fft.ifft(tempDensity)*np.prod(tempDensity.shape)
+    realDensity=np.fft.ifft(tempDensity)*NGrid
 
     exchangeCorrelationReal=functionalLDA(realDensity)
 
-    exchangeCorrelation=np.fft.fftn(exchangeCorrelationReal)/np.prod(exchangeCorrelationReal.shape)
+    exchangeCorrelation=np.fft.fftn(exchangeCorrelationReal)/NGrid
     exchangeCorrelation=np.fft.fftshift(exchangeCorrelation)
 
     return exchangeCorrelation
 
 def getPotential(qGridBig,density, atomicPositions, atomicNumbers, rC, cellVol):
-    return getExchangeCorrelation(density)+getExternalPotential(qGridBig, atomicPositions, atomicNumbers, rC, cellVol)+calcHartree(density, qGridBig)
+    return getExchangeCorrelation(density, cellVol)+getExternalPotential(qGridBig, atomicPositions, atomicNumbers, rC, cellVol)+calcHartree(density, qGridBig)
 
 def actHamiltonianGrid(state, V,qGridSmall, k):
     #outState=np.copy(state)
@@ -78,7 +81,7 @@ def actHamiltonianVec(state, hamiltonianArgs):
     #    for j in range(len(outState[0])):
     #        for k in range(len(outState[0][0])):
     #            outState[i][j][k]=np.sum(V[i:i+len(state)][j:j+len(state[0])][k:k+len(state[0][0])]*state)
-    outState+=0.5*np.linalg.norm((qGridSmall+k), axis=-1)*stateWork
+    outState+=0.5*(np.linalg.norm((qGridSmall+k), axis=-1)**2.0)*stateWork
     return outState
 
 
