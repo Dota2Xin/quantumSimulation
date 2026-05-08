@@ -64,15 +64,15 @@ def calcDensity(psi,n1,n2,n3, cellVol):
     return density
 
 def getStartingDensity(atomicNumbers, cellVol, bigGrid, n1, n2, n3):
-    total1=4*len(n1)+1
-    total2=4*len(n2)+1
-    total3=4*len(n3)+3
+    total1=len(n1)
+    total2=len(n2)
+    total3=len(n3)
 
     half1=total1//2
     half2=total2//2
     half3=total3//2
 
-    density=np.zeros_like(bigGrid)
+    density=np.zeros((len(bigGrid), len(bigGrid[0]), len(bigGrid[0][0])))
 
     density[half1][half2][half3]=np.sum(atomicNumbers)/cellVol
     return density
@@ -99,12 +99,12 @@ def mainSCFLoop(initialConditions):
     rC=initialConditions['rC']
 
     smallGrid, n1,n2,n3=makeSmallGrid(ecutwfc, reciprocalVecs)
-    bigGrid=makeBigGrid(ecutwfc, reciprocalVecs)
+    bigGrid, n1Big, n2Big, n3Big=makeBigGrid(ecutwfc, reciprocalVecs)
 
     occupations=getOccupations(atomicNumbers)
 
     #add BZ loop later
-    density=getStartingDensity(atomicNumbers,cellVol, bigGrid, n1, n2, n3)
+    density=getStartingDensity(atomicNumbers,cellVol, bigGrid, n1Big, n2Big, n3Big)
     relDiff = 1e5
     tol = 1e-1
 

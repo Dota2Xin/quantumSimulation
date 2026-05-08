@@ -5,12 +5,12 @@ from scipy.signal import fftconvolve
 
 def calcHartree(density, qGrid):
     qNorm=np.linalg.norm(qGrid, axis=-1)
-    result=4*np.pi*np.divide(density, (qNorm**2.0), out=np.zeros_like(density), where=(qGrid!=0))
+    result=4*np.pi*np.divide(density, (qNorm**2.0), out=np.zeros_like(density), where=(qNorm!=0))
 
     return result
 
 def getStructureFactor(qGrid, atomicPositions, atomicNumbers):
-    expArg=np.einsum('ijl,kl->ijk',qGrid, atomicPositions, dtype=np.complex64)
+    expArg=np.einsum('ijml,kl->ijmk',qGrid, atomicPositions, dtype=np.complex64, casting='unsafe')
     structureFactor=(atomicNumbers*np.exp(1j*expArg)).sum(axis=-1)
 
     return structureFactor
@@ -19,8 +19,7 @@ def getExternalPotential(qGrid,atomicPositions, atomicNumbers, rC, cellVol):
     structureFactor=getStructureFactor(qGrid, atomicPositions, atomicNumbers)
     qNorm=np.linalg.norm(qGrid, axis=-1)
     structureFactor=structureFactor*np.exp(-0.5*(rC*qNorm)**2.0)
-    result=(4*np.pi/cellVol)*np.divide(structureFactor, (qNorm**2.0), out=np.zeros_like(structureFactor), where=(qGrid!=0))
-
+    result=(4*np.pi/cellVol)*np.divide(structureFactor, (qNorm**2.0), out=np.zeros_like(structureFactor), where=(qNorm!=0))
     return result
 
 
@@ -43,17 +42,14 @@ def functionalLDA(realDensity):
     return exchange+correlation
 
 #assumes it has a functional in real-space
-def getExchangeCorrelation(density):
+def getExchangeCorrelation(density, cellVol):
     NGrid=np.prod(density.shape)
-
     tempDensity=np.fft.ifftshift(density)
     realDensity=np.fft.ifft(tempDensity)*NGrid
 
     exchangeCorrelationReal=functionalLDA(realDensity)
-
     exchangeCorrelation=np.fft.fftn(exchangeCorrelationReal)/NGrid
     exchangeCorrelation=np.fft.fftshift(exchangeCorrelation)
-
     return exchangeCorrelation
 
 def getPotential(qGridBig,density, atomicPositions, atomicNumbers, rC, cellVol):
@@ -73,10 +69,19 @@ def actHamiltonianVec(state, hamiltonianArgs):
     V=hamiltonianArgs['V']
     qGridSmall=hamiltonianArgs['qGridSmall']
     k=hamiltonianArgs['k']
-    #outState=np.copy(state)
     gridShape = qGridSmall.shape[:-1]
     stateWork=state.reshape(gridShape)
-    outState=fftconvolve(V, stateWork[::-1, ::-1, ::-1], mode='valid')
+    # 2. Potential Energy: G-space -> Real-space -> G-space
+    # (Using the same logic as your getExchangeCorrelation)
+    NGrid = np.prod(gridShape)
+    stateReal = np.fft.ifftn(np.fft.ifftshift(stateWork))*NGrid
+
+    # Multiply by potential in real space (This is equivalent to G-space convolution)
+    #NEED TO FIX THIS
+    outReal = V * stateReal
+
+    # Transform back to G-space
+    outState = np.fft.fftshift(np.fft.fftn(outReal)) / NGrid
     #for i in range(len(outState)):
     #    for j in range(len(outState[0])):
     #        for k in range(len(outState[0][0])):
@@ -99,12 +104,13 @@ def solveSchrodinger(inputDict):
     l=inputDict['nBand']
 
     VPotential=getPotential(bigGrid,density,atomicPositions, atomicNumbers, rC, cellVol)
+
     hamiltonianArgs={}
     hamiltonianArgs['V']=VPotential
     hamiltonianArgs['qGridSmall']=smallGrid
     hamiltonianArgs['k']=k
 
-    stateSize=np.shape(smallGrid)
+    stateSize=len(smallGrid)*len(smallGrid[0])*len(smallGrid[0][0])
     energies, eigenfuncs=blockDavidson(l, 3*l, stateSize, smallGrid, actHamiltonianVec, hamiltonianArgs)
 
     return energies, eigenfuncs
