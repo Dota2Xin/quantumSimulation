@@ -1,3 +1,5 @@
+from numba.core.types import np_float16
+
 from blockDavidson import *
 import math
 import numpy as np
@@ -65,29 +67,51 @@ def actHamiltonianGrid(state, V,qGridSmall, k):
     outState+=0.5*np.linalg.norm((qGridSmall+k), axis=-1)*state
     return outState
 
+
+def padZeros(n1Arr, n2Arr, n3Arr, smallGrid):
+    n1=len(n1Arr)
+    d1=int((n1-1)/2)
+    n2=len(n2Arr)
+    d2 =int((n2 - 1)/2)
+    n3=len(n3Arr)
+    d3=int((n3-1)/2)
+
+    big = (2 * n1 - 1, 2 * n2 - 1, 2 * n3 - 1)
+    bigGrid = np.zeros(big, dtype=np.complex64)
+    bigGrid[d1:3*d1+1, d2:3*d2+1, d3:3*d3+1]=smallGrid
+
+    return bigGrid
+
 def actHamiltonianVec(state, hamiltonianArgs):
     V=hamiltonianArgs['V']
     qGridSmall=hamiltonianArgs['qGridSmall']
     k=hamiltonianArgs['k']
+    n1=hamiltonianArgs['n1']
+    n2=hamiltonianArgs['n2']
+    n3=hamiltonianArgs['n3']
     gridShape = qGridSmall.shape[:-1]
     stateWork=state.reshape(gridShape)
     # 2. Potential Energy: G-space -> Real-space -> G-space
     # (Using the same logic as your getExchangeCorrelation)
-    NGrid = np.prod(gridShape)
-    stateReal = np.fft.ifftn(np.fft.ifftshift(stateWork))*NGrid
+    stateBig=padZeros(n1,n2,n3, stateWork)
+    NGrid = np.prod(np.shape(stateBig))
+    #PAD OUT WORKING STATE OUT USING THE PADZEROS FROM HANDLESCF
+    stateReal = np.fft.ifftn(np.fft.ifftshift(stateBig))*NGrid
 
     # Multiply by potential in real space (This is equivalent to G-space convolution)
-    #NEED TO FIX THIS
+    #NEED TO FIX THIS BY MAKING THE V WE INPUT REAL
     outReal = V * stateReal
 
     # Transform back to G-space
     outState = np.fft.fftshift(np.fft.fftn(outReal)) / NGrid
+    outState=outState[0:len(n1), 0:len(n2), 0:len(n3)]
+    #CUT THE OUTSTATE DOWN TO REMOVE THE PART THAT WAS PADDED WITH ZEROS
     #for i in range(len(outState)):
     #    for j in range(len(outState[0])):
     #        for k in range(len(outState[0][0])):
     #            outState[i][j][k]=np.sum(V[i:i+len(state)][j:j+len(state[0])][k:k+len(state[0][0])]*state)
     outState+=0.5*(np.linalg.norm((qGridSmall+k), axis=-1)**2.0)*stateWork
-    return outState
+    return np.reshape(outState, -1)
 
 
 #solves the Schrodinger equation in our SCF loop given an initial density
@@ -95,6 +119,9 @@ def actHamiltonianVec(state, hamiltonianArgs):
 def solveSchrodinger(inputDict):
     density=inputDict['density']
     smallGrid=inputDict['smallGrid']
+    n1=inputDict['n1']
+    n2=inputDict['n2']
+    n3=inputDict['n3']
     bigGrid=inputDict['bigGrid']
     atomicPositions=inputDict['atomicPositions']
     atomicNumbers=inputDict['atomicNumbers']
@@ -104,13 +131,18 @@ def solveSchrodinger(inputDict):
     l=inputDict['nBand']
 
     VPotential=getPotential(bigGrid,density,atomicPositions, atomicNumbers, rC, cellVol)
+    RealV=np.fft.ifft(np.fft.ifftshift(VPotential))*np.prod(np.shape(VPotential))
 
     hamiltonianArgs={}
-    hamiltonianArgs['V']=VPotential
+    hamiltonianArgs['V']=RealV
+    hamiltonianArgs['VFourier']=VPotential
     hamiltonianArgs['qGridSmall']=smallGrid
     hamiltonianArgs['k']=k
+    hamiltonianArgs['n1']=n1
+    hamiltonianArgs['n2']=n2
+    hamiltonianArgs['n3'] = n3
 
     stateSize=len(smallGrid)*len(smallGrid[0])*len(smallGrid[0][0])
-    energies, eigenfuncs=blockDavidson(l, 3*l, stateSize, smallGrid, actHamiltonianVec, hamiltonianArgs)
+    energies, eigenfuncs=blockDavidson(l, 9*l, stateSize, smallGrid, actHamiltonianVec, hamiltonianArgs)
 
     return energies, eigenfuncs

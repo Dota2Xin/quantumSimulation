@@ -20,13 +20,13 @@ def makeSmallGrid(ecutwfc, reciprocalVecs):
     return qGridSmall, n1Arr, n2Arr, n3Arr
 
 def makeBigGrid(ecutwfc, reciprocalVecs):
-    n1 = 2*math.ceil(np.sqrt(ecutwfc) / np.linalg.norm(reciprocalVecs[:, 0])) + 1
-    n2 = 2*math.ceil(np.sqrt(ecutwfc) / np.linalg.norm(reciprocalVecs[:, 1])) + 1
-    n3 = 2*math.ceil(np.sqrt(ecutwfc) / np.linalg.norm(reciprocalVecs[:, 2])) + 1
+    n1 = math.ceil(np.sqrt(ecutwfc) / np.linalg.norm(reciprocalVecs[:, 0])) + 1
+    n2 = math.ceil(np.sqrt(ecutwfc) / np.linalg.norm(reciprocalVecs[:, 1])) + 1
+    n3 = math.ceil(np.sqrt(ecutwfc) / np.linalg.norm(reciprocalVecs[:, 2])) + 1
 
-    n1Arr = np.linspace(-n1, n1, 2 * n1 + 1)
-    n2Arr = np.linspace(-n2, n2, 2 * n2 + 1)
-    n3Arr = np.linspace(-n3, n3, 2 * n3 + 1)
+    n1Arr = np.linspace(-2*n1, 2*n1, 4 * n1 + 1)
+    n2Arr = np.linspace(-2*n2, 2*n2, 4 * n2 + 1)
+    n3Arr = np.linspace(-2*n3, 2*n3, 4 * n3 + 1)
 
     v1 = n1Arr[:, None, None, None] * reciprocalVecs[:, 0]
     v2 = n2Arr[None, :, None, None] * reciprocalVecs[:, 1]
@@ -38,12 +38,15 @@ def makeBigGrid(ecutwfc, reciprocalVecs):
 
 def padZeros(n1Arr, n2Arr, n3Arr, smallGrid):
     n1=len(n1Arr)
+    d1=int((n1-1)/2)
     n2=len(n2Arr)
+    d2 =int((n2 - 1)/2)
     n3=len(n3Arr)
+    d3=int((n3-1)/2)
 
-    big = (4 * n1 + 1, 4 * n2 + 1, 4 * n3 + 1)
+    big = (2 * n1 - 1, 2 * n2 - 1, 2 * n3 - 1)
     bigGrid = np.zeros(big, dtype=np.complex64)
-    bigGrid[n1:3*n1+1, n2:3*n2+1, n3:3*n3+1]=smallGrid
+    bigGrid[d1:3*d1+1, d2:3*d2+1, d3:3*d3+1]=smallGrid
 
     return bigGrid
 
@@ -119,6 +122,9 @@ def mainSCFLoop(initialConditions):
     solveSchrodingerInputDict['cellVol']=cellVol
     solveSchrodingerInputDict['k']=0
     solveSchrodingerInputDict['nBand']=nBand
+    solveSchrodingerInputDict['n1']=n1
+    solveSchrodingerInputDict['n2']=n2
+    solveSchrodingerInputDict['n3']=n3
     #fill out with rest of args as needed
 
     while relDiff > tol:

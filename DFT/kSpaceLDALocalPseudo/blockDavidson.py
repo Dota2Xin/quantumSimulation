@@ -19,18 +19,19 @@ def blockDavidson(l,m,stateSize,qGridSmall, actHamiltonian, hamiltonianArgs):
         return eigval[:l], ritz[:, :l]
 
     HDiag=getDiagonal(qGridSmall, hamiltonianArgs)
-    SDiag=np.zeros(len(HDiag))+1
+    SDiag=np.ones_like(HDiag)
     denom =HDiag[:, np.newaxis] - SDiag[:, np.newaxis] * eigval[:l]
     tol = 1e-5
     denom = np.where(np.abs(denom) < tol, tol * np.sign(denom + 1e-16), denom)
     T = res[:, :l] / denom
     V = sOrtho(V, ritz, T, m, l)
-
+    print("Hello")
     while np.linalg.norm(res[:, :l]) >= 1e-3:  # Bug 1 fix
+        print(np.linalg.norm(res[:, :l]))
         ritz, eigval, res = blockDavidsonIter(V, actHamiltonian, hamiltonianArgs)
 
         HDiag = getDiagonal(qGridSmall, hamiltonianArgs)
-        SDiag = np.zeros(len(HDiag))+1
+        SDiag=np.ones_like(HDiag)
 
         denom = HDiag[:, np.newaxis] - SDiag[:, np.newaxis] * eigval[:l]
         tol = 1e-5
@@ -42,8 +43,8 @@ def blockDavidson(l,m,stateSize,qGridSmall, actHamiltonian, hamiltonianArgs):
 
 def getDiagonal(qGridSmall, hamiltonianArgs):
     k=hamiltonianArgs['k']
-    VPotential=hamiltonianArgs['V']
-    HDiag=0.5 * np.linalg.norm((qGridSmall + k), axis=-1)
+    VPotential=hamiltonianArgs['VFourier']
+    HDiag=(0.5 * np.linalg.norm((qGridSmall + k), axis=-1)).astype(complex)
     half1=len(VPotential)//2
     half2=len(VPotential[0])//2
     half3=len(VPotential[0][0])//2
@@ -56,7 +57,7 @@ def getDiagonal(qGridSmall, hamiltonianArgs):
 #use fact that we act on vectors to create matmul between Hamiltonian and matrix of column vectors
 #we just have to note that vectors are 3D grid now and work with that
 def hamiltonianMatmul(A, actHamiltonian, hamiltonianArgs):
-    B=np.copy(A)
+    B=np.copy(A).astype(complex)
     for i in range(len(A[0])):
         B[:,i ]=actHamiltonian(A[:, i], hamiltonianArgs)
     return B
