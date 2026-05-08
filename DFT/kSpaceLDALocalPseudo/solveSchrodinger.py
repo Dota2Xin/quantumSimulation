@@ -47,7 +47,7 @@ def functionalLDA(realDensity):
 def getExchangeCorrelation(density, cellVol):
     NGrid=np.prod(density.shape)
     tempDensity=np.fft.ifftshift(density)
-    realDensity=np.fft.ifft(tempDensity)*NGrid
+    realDensity=np.fft.ifftn(tempDensity)*NGrid
 
     exchangeCorrelationReal=functionalLDA(realDensity)
     exchangeCorrelation=np.fft.fftn(exchangeCorrelationReal)/NGrid
@@ -104,7 +104,10 @@ def actHamiltonianVec(state, hamiltonianArgs):
 
     # Transform back to G-space
     outState = np.fft.fftshift(np.fft.fftn(outReal)) / NGrid
-    outState=outState[0:len(n1), 0:len(n2), 0:len(n3)]
+    d1 = int((len(n1) - 1) / 2)
+    d2 = int((len(n2) - 1) / 2)
+    d3 = int((len(n3) - 1) / 2)
+    outState=outState[d1:3*d1+1, d2:3*d2+1, d3:3*d3+1]
     #CUT THE OUTSTATE DOWN TO REMOVE THE PART THAT WAS PADDED WITH ZEROS
     #for i in range(len(outState)):
     #    for j in range(len(outState[0])):
@@ -131,7 +134,7 @@ def solveSchrodinger(inputDict):
     l=inputDict['nBand']
 
     VPotential=getPotential(bigGrid,density,atomicPositions, atomicNumbers, rC, cellVol)
-    RealV=np.fft.ifft(np.fft.ifftshift(VPotential))*np.prod(np.shape(VPotential))
+    RealV=np.fft.ifftn(np.fft.ifftshift(VPotential)).real*np.prod(np.shape(VPotential))
 
     hamiltonianArgs={}
     hamiltonianArgs['V']=RealV

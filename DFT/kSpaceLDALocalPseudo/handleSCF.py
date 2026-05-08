@@ -58,7 +58,7 @@ def calcDensity(psi,n1,n2,n3, cellVol):
     bigPsi=np.fft.ifftshift(bigPsi)
     nGrid=np.prod(bigPsi.shape)
 
-    realPsi=np.fft.ifftn(bigPsi)*nGrid/cellVol
+    realPsi=(np.fft.ifftn(bigPsi)*nGrid/cellVol).real
     realDensity=np.abs(realPsi)**2.0
 
     density=np.fft.fftn(realDensity)/nGrid
@@ -75,13 +75,13 @@ def getStartingDensity(atomicNumbers, cellVol, bigGrid, n1, n2, n3):
     half2=total2//2
     half3=total3//2
 
-    density=np.zeros((len(bigGrid), len(bigGrid[0]), len(bigGrid[0][0])))
+    density=np.zeros((len(bigGrid), len(bigGrid[0]), len(bigGrid[0][0])), dtype=np.complex64)
 
     density[half1][half2][half3]=np.sum(atomicNumbers)/cellVol
     return density
 
-def getOccupations(atomicNumbers):
-    return np.sum(atomicNumbers)
+def getOccupations(nBand):
+    return nBand
 
 def mainSCFLoop(initialConditions):
     ecutwfc=initialConditions['ecutwfc']
@@ -104,7 +104,7 @@ def mainSCFLoop(initialConditions):
     smallGrid, n1,n2,n3=makeSmallGrid(ecutwfc, reciprocalVecs)
     bigGrid, n1Big, n2Big, n3Big=makeBigGrid(ecutwfc, reciprocalVecs)
 
-    occupations=getOccupations(atomicNumbers)
+    occupations=getOccupations(nBand)
 
     #add BZ loop later
     density=getStartingDensity(atomicNumbers,cellVol, bigGrid, n1Big, n2Big, n3Big)
@@ -132,7 +132,7 @@ def mainSCFLoop(initialConditions):
         oldDensity=np.copy(density)
         density=np.zeros_like(oldDensity)
         for i in range(occupations):
-            density+=calcDensity(wavefuncs[i], n1,n2,n3, cellVol)
+            density+=2*calcDensity(wavefuncs[i], n1,n2,n3, cellVol)
 
         relDiff=np.linalg.norm(density-oldDensity)/np.linalg.norm(density)
         relDiff=tol/2

@@ -25,9 +25,13 @@ def blockDavidson(l,m,stateSize,qGridSmall, actHamiltonian, hamiltonianArgs):
     denom = np.where(np.abs(denom) < tol, tol * np.sign(denom + 1e-16), denom)
     T = res[:, :l] / denom
     V = sOrtho(V, ritz, T, m, l)
-    print("Hello")
-    while np.linalg.norm(res[:, :l]) >= 1e-3:  # Bug 1 fix
-        print(np.linalg.norm(res[:, :l]))
+    #print("Hello")
+    temp=np.linalg.norm(res[:, :l])
+    ratio=1e5
+    #INSTABILITY HERE IT MAY BE APT TO SWITCH TO SOME PERCENTAGE CHANGE LOGIC AS WELL
+    #AS OPPOSED TO STRICT NROM WITH SOMETHING LIKE A DIFF
+    while ratio >= 0.001:  # Bug 1 fix
+        #print(ratio)
         ritz, eigval, res = blockDavidsonIter(V, actHamiltonian, hamiltonianArgs)
 
         HDiag = getDiagonal(qGridSmall, hamiltonianArgs)
@@ -38,6 +42,8 @@ def blockDavidson(l,m,stateSize,qGridSmall, actHamiltonian, hamiltonianArgs):
         denom = np.where(np.abs(denom) < tol, tol * np.sign(denom + 1e-16), denom)
         T = res[:, :l] / denom  # Bug 2 fix
         V = sOrtho(V, ritz, T, m, l)
+        ratio=np.abs(np.linalg.norm(res[:, :l])-temp)/np.linalg.norm(res[:, :l])
+        temp=np.linalg.norm(res[:, :l])
 
     return eigval[:l], ritz[:, :l]
 
