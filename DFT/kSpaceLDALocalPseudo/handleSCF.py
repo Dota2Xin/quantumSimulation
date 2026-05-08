@@ -135,5 +135,6 @@ def mainSCFLoop(initialConditions):
             density+=2*calcDensity(wavefuncs[i], n1,n2,n3, cellVol)
 
         relDiff=np.linalg.norm(density-oldDensity)/np.linalg.norm(density)
-        relDiff=tol/2
+        #print(relDiff)
+        #relDiff=tol/2
     return density
