@@ -38,7 +38,9 @@ def corr2(x):
     return base+derivative
 
 def functionalLDA(realDensity):
-    exchange=(-3/4)*((3*realDensity/np.pi)**(1.0/3.0))
+    #exchange=(-3/4)*((3*realDensity/np.pi)**(1.0/3.0))
+    #have to include derivative which gives 1/3+1=4/3 to cancel the -3/4
+    exchange=-((3*realDensity/np.pi)**(1.0/3.0))
     rs = (3.0 / (4.0 * np.pi * (realDensity + 1e-12))) ** (1.0 / 3.0)
     correlation=np.piecewise(rs, [rs<1, rs>=1], [corr1, corr2])
     return exchange+correlation

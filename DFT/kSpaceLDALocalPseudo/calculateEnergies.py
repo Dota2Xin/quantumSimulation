@@ -12,7 +12,10 @@ def calcEwald():
 def ewaldTranslation():
     return 0
 
-def ewaldG():
+def ewaldG(qGridBig, atomicPositions, eta, cellVol):
+    #make grid over pairs of atomic positions and then flatten to get position arrays
+    #can then just repeat structure factor caculation with the flattened grid replacing atomicPositions
+    #in the structure factor from solveSchrodinger.
     return 0
 
 def hartreeEnergy(qGridBig, density):
@@ -36,7 +39,6 @@ def externalEnergy(density, qGridBig, structureFactor, rC):
     main = np.divide(main, (qNorm ** 2.0), out=np.zeros_like(density), where=(qNorm != 0))
 
     return -4*np.pi*main
-
 
 #r_s<1
 def corr1(x):
@@ -65,5 +67,6 @@ def getExchangeCorrelation(density, cellVol):
     exchangeCorrelation=np.fft.fftshift(exchangeCorrelation)
     return exchangeCorrelation
 
-def exchangeCorrelationEnergy():
-    return 0
+def exchangeCorrelationEnergy(density, cellVol):
+    exchangeCorrelationDensity=getExchangeCorrelation(density, cellVol)
+    return np.sum(exchangeCorrelationDensity*density)
