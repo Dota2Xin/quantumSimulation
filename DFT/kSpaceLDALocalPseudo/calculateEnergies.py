@@ -29,5 +29,13 @@ def kineticEnergy(wavefuncs, qGridSmall, k):
         T+=np.sum(np.abs(state)*0.5 * (np.linalg.norm((qGridSmall + k), axis=-1) ** 2.0) * np.abs(state))
     return T
 
+def externalEnergy(density, qGridBig, structureFactor, rC):
+    main = np.abs(density)*structureFactor
+    qNorm = np.linalg.norm(qGridBig, axis=-1)
+    main=main*np.exp(-0.5*((rC*qNorm)**2.0))
+    main = np.divide(main, (qNorm ** 2.0), out=np.zeros_like(density), where=(qNorm != 0))
+
+    return -4*np.pi*main
+
 def exchangeCorrelationEnergy():
     return 0
