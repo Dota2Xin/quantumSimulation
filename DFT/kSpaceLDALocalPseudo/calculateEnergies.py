@@ -37,5 +37,33 @@ def externalEnergy(density, qGridBig, structureFactor, rC):
 
     return -4*np.pi*main
 
+
+#r_s<1
+def corr1(x):
+    base=-0.0480+0.0311*np.log(x)-0.0116*x+0.0020*x*np.log(x)
+    return base
+
+#r_s>1
+def corr2(x):
+    base=-0.14213/(1+1.0529*np.sqrt(x)+0.3334*x)
+    return base
+
+def functionalLDA(realDensity):
+    exchange=(-3/4)*((3*realDensity/np.pi)**(1.0/3.0))
+    rs = (3.0 / (4.0 * np.pi * (realDensity + 1e-12))) ** (1.0 / 3.0)
+    correlation=np.piecewise(rs, [rs<1, rs>=1], [corr1, corr2])
+    return exchange+correlation
+
+#assumes it has a functional in real-space
+def getExchangeCorrelation(density, cellVol):
+    NGrid=np.prod(density.shape)
+    tempDensity=np.fft.ifftshift(density)
+    realDensity=np.fft.ifftn(tempDensity)*NGrid
+
+    exchangeCorrelationReal=functionalLDA(realDensity)
+    exchangeCorrelation=np.fft.fftn(exchangeCorrelationReal)/NGrid
+    exchangeCorrelation=np.fft.fftshift(exchangeCorrelation)
+    return exchangeCorrelation
+
 def exchangeCorrelationEnergy():
     return 0
