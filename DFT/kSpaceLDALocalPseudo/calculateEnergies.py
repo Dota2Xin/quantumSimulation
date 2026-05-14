@@ -6,17 +6,62 @@ from scipy.signal import fftconvolve
 def calculateEnergy(density,wavefunctions, atomicPositions, atomicNumbers, rC):
     return 0
 
-def calcEwald():
+
+def makeBigGridT(Rc, latticeVecs):
+    n1 = math.ceil(Rc/ np.linalg.norm(latticeVecs[:, 0])) + 1
+    n2 = math.ceil(Rc/ np.linalg.norm(latticeVecs[:, 1])) + 1
+    n3 = math.ceil(Rc/ np.linalg.norm(latticeVecs[:, 2])) + 1
+
+    n1Arr = np.linspace(-2*n1, 2*n1, 4 * n1 + 1)
+    n2Arr = np.linspace(-2*n2, 2*n2, 4 * n2 + 1)
+    n3Arr = np.linspace(-2*n3, 2*n3, 4 * n3 + 1)
+
+    v1 = n1Arr[:, None, None, None] * latticeVecs[:, 0]
+    v2 = n2Arr[None, :, None, None] * latticeVecs[:, 1]
+    v3 = n3Arr[None, None, :, None] * latticeVecs[:, 2]
+
+    qGridBig = v1 + v2 + v3
+
+    return qGridBig, n1Arr, n2Arr, n3Arr
+#gets the T grid and eta we'll use based on our target error
+def getEtaTGrid(qGridBig, targetErr, latticeVecs):
+    gMax=np.linalg.norm(qGridBig[-1][-1][-1])
+    eta=np.sqrt(-(gMax**2.0)/(4*np.log(targetErr)))
+
+    Rc=np.sqrt(np.log(targetErr)/(eta**2.0))
+    tGridBig=makeBigGridT(Rc, latticeVecs)
+
+    return eta, tGridBig
+
+def calcEwald(qGridBig, atomicPositions,atomicNumbers, eta, cellVol, tGridBig):
+    pre1=np.sum(atomicNumbers**2.0)
+    shift=-0.5*pre1*(2*eta/np.sqrt(np.pi)+np.pi/(cellVol*(eta**2.0)))
+    gPart=ewaldG(qGridBig, atomicPositions, atomicNumbers, eta, cellVol)
+    tPart=ewaldTranslation(atomicNumbers, atomicPositions, eta, tGridBig)
+    return tPart+gPart+shift
+
+def ewaldTranslation(atomicNumbers, atomicPositions, eta, tGridBig):
+    atomicDiffs = np.broadcast_to(atomicPositions, (len(atomicPositions), len(atomicPositions), 3))
+    atomicDiffs = atomicDiffs - np.transpose(atomicDiffs, axes=[1, 0, 2])
+    atomicDiffs = np.reshape(atomicDiffs, (len(atomicDiffs) ** 2, 3))
+
     return 0
 
-def ewaldTranslation():
-    return 0
+def ewaldG(qGridBig, atomicPositions,atomicNumbers, eta, cellVol):
+    atomicDiffs=np.broadcast_to(atomicPositions, (len(atomicPositions), len(atomicPositions), 3))
+    atomicDiffs=atomicDiffs-np.transpose(atomicDiffs, axes=[1,0,2])
+    atomicDiffs=np.reshape(atomicDiffs, (len(atomicDiffs)**2, 3))
 
-def ewaldG(qGridBig, atomicPositions, eta, cellVol):
-    #make grid over pairs of atomic positions and then flatten to get position arrays
-    #can then just repeat structure factor caculation with the flattened grid replacing atomicPositions
-    #in the structure factor from solveSchrodinger.
-    return 0
+    cosArg = np.einsum('ijml,kl->ijmk', qGridBig, atomicDiffs, dtype=np.complex64, casting='unsafe')
+    numberProduct=np.outer(atomicNumbers, atomicNumbers)
+    numberProduct=np.reshape(numberProduct, -1)
+    structureFactor = (np.cos(cosArg)*numberProduct).sum(axis=-1)
+
+    qNorm = np.linalg.norm(qGridBig, axis=-1)
+
+    main = structureFactor * np.exp(-(qNorm**2.0)/(4*(eta**2.0)))
+    main = np.divide(main, (qNorm ** 2.0), out=np.zeros_like(qNorm), where=(qNorm != 0))
+    return 2*np.pi*np.sum(main)/cellVol
 
 def hartreeEnergy(qGridBig, density):
     main=np.abs(density)*np.abs(density)
