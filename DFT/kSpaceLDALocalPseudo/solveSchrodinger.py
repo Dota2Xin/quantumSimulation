@@ -21,7 +21,7 @@ def getExternalPotential(qGrid,atomicPositions, atomicNumbers, rC, cellVol):
     structureFactor=getStructureFactor(qGrid, atomicPositions, atomicNumbers, cellVol)
     qNorm=np.linalg.norm(qGrid, axis=-1)
     structureFactor=structureFactor*np.exp(-0.5*(rC*qNorm)**2.0)
-    result=(4*np.pi/cellVol)*np.divide(structureFactor, (qNorm**2.0), out=np.zeros_like(structureFactor), where=(qNorm!=0))
+    result=-(4*np.pi)*np.divide(structureFactor, (qNorm**2.0), out=np.zeros_like(structureFactor), where=(qNorm!=0))
     return result
 
 

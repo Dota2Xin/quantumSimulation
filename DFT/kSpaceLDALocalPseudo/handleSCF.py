@@ -67,16 +67,9 @@ def calcDensity(psi,n1,n2,n3, cellVol):
 
     return density
 
-def getMeanDensity(density, n1, n2, n3):
-    total1=len(n1)
-    total2=len(n2)
-    total3=len(n3)
-
-    half1=total1//2
-    half2=total2//2
-    half3=total3//2
-
-    return density[half1][half2][half3]
+def getMeanDensity(density):
+    s = density.shape
+    return density[s[0]//2, s[1]//2, s[2]//2]
 
 def getStartingDensity(atomicNumbers, cellVol, bigGrid, n1, n2, n3):
     total1=len(n1)
@@ -151,7 +144,7 @@ def mainSCFLoop(initialConditions):
     energyInputDict['tol']=tolErr
     energyInputDict['cellVol']=cellVol
     energyInputDict['kGrid']=[[0]]
-    prevEnergy=0
+    prevEnergy=100
     while relDiff > tol:
         energies, wavefuncs= solveSchrodinger(solveSchrodingerInputDict)
         oldDensity=np.copy(density)
@@ -159,13 +152,14 @@ def mainSCFLoop(initialConditions):
         for i in range(occupations):
             density+=2*calcDensity(wavefuncs[:,i], n1,n2,n3, cellVol)
         print("CURR SOMETHING OR OTHER:")
-        print(f"Mean Density Data: {getMeanDensity(density, n1, n2, n3)}")
+        print(f"Mean Density Data: {getMeanDensity(density)}")
         print(f"Mean Density True:{np.sum(atomicNumbers)/cellVol}")
+        solveSchrodingerInputDict['density'] = density
         energyInputDict['density']=density
         energyInputDict['wavefunctions']=wavefuncs
 
         currEnergy=calculateEnergy(energyInputDict)
-        relDiff=np.abs(currEnergy-prevEnergy)/currEnergy
+        relDiff=np.abs(currEnergy-prevEnergy)/np.abs(currEnergy)
         prevEnergy=currEnergy
 
 
