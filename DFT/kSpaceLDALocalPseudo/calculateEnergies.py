@@ -21,14 +21,20 @@ def calculateEnergy(args):
     structureFactor=getStructureFactor(qGridBig, atomicPositions, atomicNumbers)
 
     E1=calcEwald(qGridBig, atomicPositions, atomicNumbers, eta, cellVol, tGridBig)
+    print("Starting Runs:")
+    print(f"Ewald Energy: {E1}")
     E2=hartreeEnergy(qGridBig, density)
+    print(f"Hartree Energy: {E2}")
     E3=0
     for i in range(len(kGrid)):
         for j in range(len(kGrid[i])):
             k=kGrid[i][j]
             E3+=kineticEnergy(wavefunctions, qGridSmall, k)
+    print(f"Kinetic Energy: {E3}")
     E4=externalEnergy(density, qGridBig, structureFactor, rC)
+    print(f"External Energy: {E4}")
     E5=exchangeCorrelationEnergy(density, cellVol)
+    print(f"Exchange Correlation: {E5}")
     return np.real(E1+E2+E3+E4+E5)
 
 def getStructureFactor(qGrid, atomicPositions, atomicNumbers):
@@ -58,8 +64,9 @@ def getEtaTGrid(qGridBig, targetErr, latticeVecs):
     gMax=np.linalg.norm(qGridBig[-1][-1][-1])
     eta=np.sqrt(-(gMax**2.0)/(4*np.log(targetErr)))
 
-    Rc=np.sqrt(np.log(targetErr)/(eta**2.0))
-    tGridBig=makeBigGridT(Rc, latticeVecs)
+    Rc=np.sqrt(-np.log(targetErr)/(eta**2.0))
+
+    tGridBig,_1,_2,_3=makeBigGridT(Rc, latticeVecs)
 
     return eta, tGridBig
 
@@ -99,7 +106,7 @@ def ewaldG(qGridBig, atomicPositions,atomicNumbers, eta, cellVol):
     atomicDiffs=atomicDiffs-np.transpose(atomicDiffs, axes=[1,0,2])
     atomicDiffs=np.reshape(atomicDiffs, (len(atomicDiffs)**2, 3))
 
-    cosArg = np.einsum('ijml,kl->ijmk', qGridBig, atomicDiffs, dtype=np.complex64, casting='unsafe')
+    cosArg = np.einsum('ijml,kl->ijmk', qGridBig, atomicDiffs, dtype=np.float64, casting='unsafe')
     numberProduct=np.outer(atomicNumbers, atomicNumbers)
     numberProduct=np.reshape(numberProduct, -1)
     structureFactor = (np.cos(cosArg)*numberProduct).sum(axis=-1)
@@ -125,12 +132,12 @@ def kineticEnergy(wavefuncs, qGridSmall, k):
     return T
 
 def externalEnergy(density, qGridBig, structureFactor, rC):
-    main = np.abs(density)*structureFactor
-    qNorm = np.linalg.norm(qGridBig, axis=-1)
+    main = density*structureFactor
+    qNorm = np.linalg.norm(qGridBig, axis=-1, )
     main=main*np.exp(-0.5*((rC*qNorm)**2.0))
-    main = np.divide(main, (qNorm ** 2.0), out=np.zeros_like(density), where=(qNorm != 0))
+    main = np.divide(main, (qNorm ** 2.0), out=np.zeros_like(density, dtype=np.complex64), where=(qNorm != 0))
 
-    return -4*np.pi*main
+    return -4*np.pi*np.sum(main)
 
 #r_s<1
 def corr1(x):

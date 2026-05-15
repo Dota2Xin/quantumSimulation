@@ -1,24 +1,30 @@
 from solveSchrodinger import *
 from handleSCF import *
+import matplotlib.pyplot as plt
+
+
+
 
 def main():
     # Simple Cubic Helium System
+    a=3.0
+
     initialConditions = {
         # 1. Kinetic energy cutoff (Hartree)
         # A value of 10.0 is small enough for testing but captures basic features.
-        'ecutwfc': 10.0,
+        'ecutwfc': 20.0,
 
         # 2. Lattice Vectors (Bohr)
         # A 6x6x6 Bohr cube provides enough space to avoid interaction with images.
         'latticeVecs': np.array([
-            [6.0, 0.0, 0.0],
-            [0.0, 6.0, 0.0],
-            [0.0, 0.0, 6.0]
+            [a, 0.0, 0.0],
+            [0.0, a, 0.0],
+            [0.0, 0.0, a]
         ]),
 
         # 3. Atomic Information (Helium)
         'atomicPositions': np.array([
-            [3.0, 3.0, 3.0]  # Center of the cell
+            [a/2,a/2,a/2]  # Center of the cell
         ]),
         'atomicNumbers': np.array([2]),  # Helium
         'atomicMasses': np.array([4.0026]),
@@ -29,8 +35,28 @@ def main():
         'rC': 0.5,  # Potential cutoff radius (Bohr)
         'tol':1e-2
     }
+    _, currEnergy = mainSCFLoop(initialConditions)
+    return 0
+    daArr=np.linspace(-1.0,1.0, 3)
+    energies=np.zeros_like(daArr)
+    for i in range(len(daArr)):
+        da=daArr[i]
+        aTemp=a+da
+        latticeVecs=np.asarray([
+            [aTemp, 0.0, 0.0],
+            [0.0, aTemp, 0.0],
+            [0.0, 0.0, aTemp]
+        ])
+        atomicPositions=np.asarray([
+            [aTemp/2,aTemp/2,aTemp/2]  # Center of the cell
+        ])
+        initialConditions['latticeVecs']=latticeVecs
+        initialConditions['atomicPositions']=atomicPositions
+        _, currEnergy= mainSCFLoop(initialConditions)
+        energies[i]=currEnergy
 
-    mainSCFLoop(initialConditions)
+    plt.plot(daArr+a, energies)
+    plt.show()
     return 0
 
 if __name__=="__main__":

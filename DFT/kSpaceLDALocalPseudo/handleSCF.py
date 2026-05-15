@@ -101,7 +101,7 @@ def mainSCFLoop(initialConditions):
     cellVol=np.linalg.det(latticeVecs)
 
     rC=initialConditions['rC']
-    tol=initialConditions['tol']
+    tolErr=initialConditions['tol']
 
     smallGrid, n1,n2,n3=makeSmallGrid(ecutwfc, reciprocalVecs)
     bigGrid, n1Big, n2Big, n3Big=makeBigGrid(ecutwfc, reciprocalVecs)
@@ -137,9 +137,10 @@ def mainSCFLoop(initialConditions):
     energyInputDict['qGridSmall']=smallGrid
     energyInputDict['latticeVecs']=latticeVecs
     energyInputDict['rC']=rC
-    energyInputDict['tol']=tol
+    energyInputDict['tol']=tolErr
     energyInputDict['cellVol']=cellVol
     energyInputDict['kGrid']=[[0]]
+    prevEnergy=0
     while relDiff > tol:
         wavefuncs, energies= solveSchrodinger(solveSchrodingerInputDict)
         oldDensity=np.copy(density)
@@ -149,10 +150,13 @@ def mainSCFLoop(initialConditions):
 
         energyInputDict['density']=density
         energyInputDict['wavefunctions']=wavefuncs
-        print('start')
+
         currEnergy=calculateEnergy(energyInputDict)
-        print(currEnergy)
-        relDiff=np.linalg.norm(density-oldDensity)/np.linalg.norm(density)
+        relDiff=np.abs(currEnergy-prevEnergy)/currEnergy
+        prevEnergy=currEnergy
+
+        #print(currEnergy)
         #print(relDiff)
-        #relDiff=tol/2
-    return density
+        #relDiff=np.linalg.norm(density-oldDensity)/np.linalg.norm(density)
+
+    return density, currEnergy
