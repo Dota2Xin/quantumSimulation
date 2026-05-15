@@ -9,7 +9,7 @@ def reshapeState(state):
 def blockDavidson(l,m,stateSize,qGridSmall, actHamiltonian, hamiltonianArgs):
     #have to deal with fact vectors are 3D grid, einsum?
     V = np.random.rand(stateSize, l)
-    B = V.T@V
+    B = V.conj().T@V
     Q = np.linalg.cholesky(B)
     V = V @ np.linalg.inv(Q.T)
     ritz, eigval, res = blockDavidsonIter(V, actHamiltonian, hamiltonianArgs)
@@ -45,6 +45,7 @@ def blockDavidson(l,m,stateSize,qGridSmall, actHamiltonian, hamiltonianArgs):
         ratio=np.abs(np.linalg.norm(res[:, :l])-temp)/np.linalg.norm(res[:, :l])
         temp=np.linalg.norm(res[:, :l])
 
+
     return eigval[:l], ritz[:, :l]
 
 def getDiagonal(qGridSmall, hamiltonianArgs):
@@ -71,7 +72,7 @@ def hamiltonianMatmul(A, actHamiltonian, hamiltonianArgs):
 #do block davidson iteration but with our hamiltonian action and understanding
 def blockDavidsonIter(V, actHamiltonian, hamiltonianArgs):
     W =hamiltonianMatmul(V, actHamiltonian, hamiltonianArgs)
-    Hk = np.transpose(V) @ W
+    Hk = V.conj().T @ W
 
     eigval, eigvec = np.linalg.eigh(Hk)
 
@@ -89,12 +90,12 @@ def grahamSchmidt(V, T, tol):
         for _ in range(2):
             for j in range(V.shape[1]):
                 currV = V[:, j]
-                currT -= currV * (currV.T @ currT)
+                currT -= currV * (currV.conj().T @ currT)
             for j in keep:        # only previously accepted columns
                 oldT = TNew[:, j]
-                currT -= oldT * (oldT.T @currT)
+                currT -= oldT * (oldT.conj().T @currT)
 
-        norm = np.sqrt(currT.T @ currT)
+        norm = np.sqrt(currT.conj().T @ currT)
         if norm >= tol:
             keep.append(i)
             TNew[:, i] = currT / norm
