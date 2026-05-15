@@ -51,7 +51,7 @@ def blockDavidson(l,m,stateSize,qGridSmall, actHamiltonian, hamiltonianArgs):
 def getDiagonal(qGridSmall, hamiltonianArgs):
     k=hamiltonianArgs['k']
     VPotential=hamiltonianArgs['VFourier']
-    HDiag=(0.5 * np.linalg.norm((qGridSmall + k), axis=-1)).astype(complex)
+    HDiag=(0.5 * np.linalg.norm((qGridSmall + k), axis=-1)**2.0).astype(complex)
     half1=len(VPotential)//2
     half2=len(VPotential[0])//2
     half3=len(VPotential[0][0])//2

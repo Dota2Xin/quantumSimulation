@@ -59,13 +59,24 @@ def calcDensity(psi,n1,n2,n3, cellVol):
     bigPsi=np.fft.ifftshift(bigPsi)
     nGrid=np.prod(bigPsi.shape)
 
-    realPsi=(np.fft.ifftn(bigPsi)*nGrid/cellVol).real
+    realPsi=(np.fft.ifftn(bigPsi)*nGrid/np.sqrt(cellVol))
     realDensity=np.abs(realPsi)**2.0
 
     density=np.fft.fftn(realDensity)/nGrid
     density=np.fft.fftshift(density)
 
     return density
+
+def getMeanDensity(density, n1, n2, n3):
+    total1=len(n1)
+    total2=len(n2)
+    total3=len(n3)
+
+    half1=total1//2
+    half2=total2//2
+    half3=total3//2
+
+    return density[half1][half2][half3]
 
 def getStartingDensity(atomicNumbers, cellVol, bigGrid, n1, n2, n3):
     total1=len(n1)
@@ -147,13 +158,16 @@ def mainSCFLoop(initialConditions):
         density=np.zeros_like(oldDensity)
         for i in range(occupations):
             density+=2*calcDensity(wavefuncs[i], n1,n2,n3, cellVol)
-
+        print("CURR SOMETHING OR OTHER:")
+        print(f"Mean Density Data: {getMeanDensity(density, n1, n2, n3)}")
+        print(f"Mean Density True:{np.sum(atomicNumbers)/cellVol}")
         energyInputDict['density']=density
         energyInputDict['wavefunctions']=wavefuncs
 
         currEnergy=calculateEnergy(energyInputDict)
         relDiff=np.abs(currEnergy-prevEnergy)/currEnergy
         prevEnergy=currEnergy
+
 
         #print(currEnergy)
         #print(relDiff)

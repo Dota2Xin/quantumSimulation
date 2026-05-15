@@ -5,20 +5,20 @@ import math
 import numpy as np
 from scipy.signal import fftconvolve
 
-def calcHartree(density, qGrid):
+def calcHartree(density, qGrid,cellVol):
     qNorm=np.linalg.norm(qGrid, axis=-1)
     result=4*np.pi*np.divide(density, (qNorm**2.0), out=np.zeros_like(density), where=(qNorm!=0))
 
     return result
 
-def getStructureFactor(qGrid, atomicPositions, atomicNumbers):
+def getStructureFactor(qGrid, atomicPositions, atomicNumbers, cellVol):
     expArg=np.einsum('ijml,kl->ijmk',qGrid, atomicPositions, dtype=np.complex64, casting='unsafe')
     structureFactor=(atomicNumbers*np.exp(1j*expArg)).sum(axis=-1)
 
-    return structureFactor
+    return structureFactor/cellVol
 
 def getExternalPotential(qGrid,atomicPositions, atomicNumbers, rC, cellVol):
-    structureFactor=getStructureFactor(qGrid, atomicPositions, atomicNumbers)
+    structureFactor=getStructureFactor(qGrid, atomicPositions, atomicNumbers, cellVol)
     qNorm=np.linalg.norm(qGrid, axis=-1)
     structureFactor=structureFactor*np.exp(-0.5*(rC*qNorm)**2.0)
     result=(4*np.pi/cellVol)*np.divide(structureFactor, (qNorm**2.0), out=np.zeros_like(structureFactor), where=(qNorm!=0))
@@ -57,7 +57,7 @@ def getExchangeCorrelation(density, cellVol):
     return exchangeCorrelation
 
 def getPotential(qGridBig,density, atomicPositions, atomicNumbers, rC, cellVol):
-    return getExchangeCorrelation(density, cellVol)+getExternalPotential(qGridBig, atomicPositions, atomicNumbers, rC, cellVol)+calcHartree(density, qGridBig)
+    return getExchangeCorrelation(density, cellVol)+getExternalPotential(qGridBig, atomicPositions, atomicNumbers, rC, cellVol)+calcHartree(density, qGridBig, cellVol)
 
 def actHamiltonianGrid(state, V,qGridSmall, k):
     #outState=np.copy(state)
