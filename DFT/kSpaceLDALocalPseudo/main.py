@@ -27,6 +27,7 @@ def main():
         'nBand': 1,  # He has 2 electrons, which fill 1 spin-degenerate band
         'bzSetting': "Single",
         'rC': 0.5,  # Potential cutoff radius (Bohr)
+        'tol':1e-2
     }
 
     mainSCFLoop(initialConditions)

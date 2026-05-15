@@ -1,11 +1,41 @@
 from blockDavidson import *
 import math
 import numpy as np
+from scipy.special import erfc
 from scipy.signal import fftconvolve
 
-def calculateEnergy(density,wavefunctions, atomicPositions, atomicNumbers, rC):
-    return 0
+def calculateEnergy(args):
+    density=args['density']
+    wavefunctions=args['wavefunctions']
+    atomicPositions=args['atomicPositions']
+    atomicNumbers=args['atomicNumbers']
+    qGridBig=args['qGridBig']
+    qGridSmall=args['qGridSmall']
+    latticeVecs=args['latticeVecs']
+    rC=args['rC']
+    tol=args['tol']
+    cellVol=args['cellVol']
+    kGrid=args['kGrid']
 
+    eta, tGridBig=getEtaTGrid(qGridBig, tol, latticeVecs)
+    structureFactor=getStructureFactor(qGridBig, atomicPositions, atomicNumbers)
+
+    E1=calcEwald(qGridBig, atomicPositions, atomicNumbers, eta, cellVol, tGridBig)
+    E2=hartreeEnergy(qGridBig, density)
+    E3=0
+    for i in range(len(kGrid)):
+        for j in range(len(kGrid[i])):
+            k=kGrid[i][j]
+            E3+=kineticEnergy(wavefunctions, qGridSmall, k)
+    E4=externalEnergy(density, qGridBig, structureFactor, rC)
+    E5=exchangeCorrelationEnergy(density, cellVol)
+    return np.real(E1+E2+E3+E4+E5)
+
+def getStructureFactor(qGrid, atomicPositions, atomicNumbers):
+    expArg=np.einsum('ijml,kl->ijmk',qGrid, atomicPositions, dtype=np.complex64, casting='unsafe')
+    structureFactor=(atomicNumbers*np.exp(1j*expArg)).sum(axis=-1)
+
+    return structureFactor
 
 def makeBigGridT(Rc, latticeVecs):
     n1 = math.ceil(Rc/ np.linalg.norm(latticeVecs[:, 0])) + 1
@@ -41,11 +71,28 @@ def calcEwald(qGridBig, atomicPositions,atomicNumbers, eta, cellVol, tGridBig):
     return tPart+gPart+shift
 
 def ewaldTranslation(atomicNumbers, atomicPositions, eta, tGridBig):
-    atomicDiffs = np.broadcast_to(atomicPositions, (len(atomicPositions), len(atomicPositions), 3))
-    atomicDiffs = atomicDiffs - np.transpose(atomicDiffs, axes=[1, 0, 2])
-    atomicDiffs = np.reshape(atomicDiffs, (len(atomicDiffs) ** 2, 3))
+    nAtoms = len(atomicPositions)
+    atomicDiffs = atomicPositions[:, np.newaxis, :] - atomicPositions[np.newaxis, :, :]
+    atomicDiffs = atomicDiffs.reshape(-1, 3)  # Shape (N^2, 3)
 
-    return 0
+    diffTranslations = atomicDiffs[:, np.newaxis, np.newaxis, np.newaxis, :] - tGridBig[np.newaxis, :, :, :, :]
+    magnitudes = np.linalg.norm(diffTranslations, axis=-1)
+
+    tauZero = np.all(atomicDiffs == 0, axis=-1)
+    tZero = np.all(tGridBig == 0, axis=-1)
+
+    singularityMask = tauZero[:, np.newaxis, np.newaxis, np.newaxis] & tZero[np.newaxis, :, :, :]
+
+    safe_mags = np.where(singularityMask, 1.0, magnitudes)
+    sumTerm = erfc(eta * safe_mags) / safe_mags
+
+    # 5. Zero out the singularity term
+    sumTerm[singularityMask] = 0.0
+    numberProduct = np.outer(atomicNumbers, atomicNumbers)
+    numberProduct = np.reshape(numberProduct, -1)
+
+    main=np.sum(numberProduct*sumTerm, axis=-1)
+    return 0.5*np.sum(main)
 
 def ewaldG(qGridBig, atomicPositions,atomicNumbers, eta, cellVol):
     atomicDiffs=np.broadcast_to(atomicPositions, (len(atomicPositions), len(atomicPositions), 3))

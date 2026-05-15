@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from solveSchrodinger import *
+from calculateEnergies import *
 
 def makeSmallGrid(ecutwfc, reciprocalVecs):
     n1=math.ceil(np.sqrt(ecutwfc)/np.linalg.norm(reciprocalVecs[:,0]))+1
@@ -100,6 +101,7 @@ def mainSCFLoop(initialConditions):
     cellVol=np.linalg.det(latticeVecs)
 
     rC=initialConditions['rC']
+    tol=initialConditions['tol']
 
     smallGrid, n1,n2,n3=makeSmallGrid(ecutwfc, reciprocalVecs)
     bigGrid, n1Big, n2Big, n3Big=makeBigGrid(ecutwfc, reciprocalVecs)
@@ -127,6 +129,17 @@ def mainSCFLoop(initialConditions):
     solveSchrodingerInputDict['n3']=n3
     #fill out with rest of args as needed
 
+    energyInputDict={}
+    energyInputDict['density']=density
+    energyInputDict['atomicPositions']=atomicPositions
+    energyInputDict['atomicNumbers']=atomicNumbers
+    energyInputDict['qGridBig']=bigGrid
+    energyInputDict['qGridSmall']=smallGrid
+    energyInputDict['latticeVecs']=latticeVecs
+    energyInputDict['rC']=rC
+    energyInputDict['tol']=tol
+    energyInputDict['cellVol']=cellVol
+    energyInputDict['kGrid']=[[0]]
     while relDiff > tol:
         wavefuncs, energies= solveSchrodinger(solveSchrodingerInputDict)
         oldDensity=np.copy(density)
@@ -134,6 +147,11 @@ def mainSCFLoop(initialConditions):
         for i in range(occupations):
             density+=2*calcDensity(wavefuncs[i], n1,n2,n3, cellVol)
 
+        energyInputDict['density']=density
+        energyInputDict['wavefunctions']=wavefuncs
+        print('start')
+        currEnergy=calculateEnergy(energyInputDict)
+        print(currEnergy)
         relDiff=np.linalg.norm(density-oldDensity)/np.linalg.norm(density)
         #print(relDiff)
         #relDiff=tol/2
