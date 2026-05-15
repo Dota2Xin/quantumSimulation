@@ -118,7 +118,7 @@ def ewaldG(qGridBig, atomicPositions,atomicNumbers, eta, cellVol):
     return 2*np.pi*np.sum(main)/cellVol
 
 def hartreeEnergy(qGridBig, density):
-    main=np.abs(density)*np.abs(density)
+    main=np.real(np.abs(density)*np.abs(density))
     qNorm=np.linalg.norm(qGridBig, axis=-1)
     main=np.divide(main, (qNorm**2.0), out=np.zeros_like(density), where=(qNorm!=0))
 
@@ -127,7 +127,7 @@ def hartreeEnergy(qGridBig, density):
 def kineticEnergy(wavefuncs, qGridSmall, k):
     T=0
     for i in range(len(wavefuncs)):
-        state=wavefuncs[i]
+        state=wavefuncs[:,i]
         T+=np.sum(np.abs(state)*0.5 * (np.linalg.norm((qGridSmall + k), axis=-1) ** 2.0) * np.abs(state))
     return T
 

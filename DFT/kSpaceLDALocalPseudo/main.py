@@ -7,12 +7,12 @@ import matplotlib.pyplot as plt
 
 def main():
     # Simple Cubic Helium System
-    a=3.0
+    a=6.0
 
     initialConditions = {
         # 1. Kinetic energy cutoff (Hartree)
         # A value of 10.0 is small enough for testing but captures basic features.
-        'ecutwfc': 20.0,
+        'ecutwfc': 10.0,
 
         # 2. Lattice Vectors (Bohr)
         # A 6x6x6 Bohr cube provides enough space to avoid interaction with images.

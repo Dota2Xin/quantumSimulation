@@ -45,8 +45,10 @@ def blockDavidson(l,m,stateSize,qGridSmall, actHamiltonian, hamiltonianArgs):
         ratio=np.abs(np.linalg.norm(res[:, :l])-temp)/np.linalg.norm(res[:, :l])
         temp=np.linalg.norm(res[:, :l])
 
-
-    return eigval[:l], ritz[:, :l]
+    gridShape=qGridSmall.shape[:-1]
+    eigenfuncs=ritz[:,:l]
+    eigenfuncs = np.array([eigenfuncs[:, i].reshape(gridShape) for i in range(l)])
+    return eigval[:l], eigenfuncs
 
 def getDiagonal(qGridSmall, hamiltonianArgs):
     k=hamiltonianArgs['k']
