@@ -17,6 +17,7 @@ def calculateEnergy(args):
     cellVol=args['cellVol']
     kGrid=args['kGrid']
 
+    #NEED TO ADD THE G=0 PSEUDOPOTENTIAL LIMIT
     eta, tGridBig=getEtaTGrid(qGridBig, tol, latticeVecs)
     structureFactor=getStructureFactor(qGridBig, atomicPositions, atomicNumbers)
 
@@ -35,7 +36,11 @@ def calculateEnergy(args):
     #print(f"External Energy: {E4}")
     E5=exchangeCorrelationEnergy(density, cellVol)
     #print(f"Exchange Correlation: {E5}")
+    E6=getG0LimitPseudo(atomicNumbers, rC, cellVol)
     return np.real(E1+E2+E3+E4+E5)
+
+def getG0LimitPseudo(atomicNumbers, rC, cellVol):
+    return 2*np.pi*np.sum(atomicNumbers)*(rC**2.0)/cellVol
 
 def getStructureFactor(qGrid, atomicPositions, atomicNumbers):
     expArg=np.einsum('ijml,kl->ijmk',qGrid, atomicPositions, dtype=np.complex64, casting='unsafe')
