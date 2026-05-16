@@ -127,7 +127,7 @@ def hartreeEnergy(qGridBig, density):
 def kineticEnergy(wavefuncs, qGridSmall, k):
     T=0
     for i in range(len(wavefuncs)):
-        state=wavefuncs[:,i]
+        state=wavefuncs[i]
         T+=np.sum(np.abs(state)*0.5 * (np.linalg.norm((qGridSmall + k), axis=-1) ** 2.0) * np.abs(state))
     return T
 

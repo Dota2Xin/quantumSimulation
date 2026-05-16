@@ -145,12 +145,16 @@ def mainSCFLoop(initialConditions):
     energyInputDict['cellVol']=cellVol
     energyInputDict['kGrid']=[[0]]
     prevEnergy=100
+
+    alpha=0.3
+
     while relDiff > tol:
         energies, wavefuncs= solveSchrodinger(solveSchrodingerInputDict)
         oldDensity=np.copy(density)
         density=np.zeros_like(oldDensity)
         for i in range(occupations):
-            density+=2*calcDensity(wavefuncs[:,i], n1,n2,n3, cellVol)
+            density+=2*calcDensity(wavefuncs[i], n1,n2,n3, cellVol)
+        density=(1-alpha)*oldDensity+alpha*density
         print("CURR SOMETHING OR OTHER:")
         print(f"Mean Density Data: {getMeanDensity(density)}")
         print(f"Mean Density True:{np.sum(atomicNumbers)/cellVol}")
