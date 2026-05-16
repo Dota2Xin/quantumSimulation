@@ -21,20 +21,20 @@ def calculateEnergy(args):
     structureFactor=getStructureFactor(qGridBig, atomicPositions, atomicNumbers)
 
     E1=calcEwald(qGridBig, atomicPositions, atomicNumbers, eta, cellVol, tGridBig)
-    print("Starting Runs:")
-    print(f"Ewald Energy: {E1}")
+    #print("Starting Runs:")
+    #print(f"Ewald Energy: {E1}")
     E2=hartreeEnergy(qGridBig, density)
-    print(f"Hartree Energy: {E2}")
+    #print(f"Hartree Energy: {E2}")
     E3=0
     for i in range(len(kGrid)):
         for j in range(len(kGrid[i])):
             k=kGrid[i][j]
             E3+=kineticEnergy(wavefunctions, qGridSmall, k)
-    print(f"Kinetic Energy: {E3}")
+    #print(f"Kinetic Energy: {E3}")
     E4=externalEnergy(density, qGridBig, structureFactor, rC)
-    print(f"External Energy: {E4}")
+    #print(f"External Energy: {E4}")
     E5=exchangeCorrelationEnergy(density, cellVol)
-    print(f"Exchange Correlation: {E5}")
+    #print(f"Exchange Correlation: {E5}")
     return np.real(E1+E2+E3+E4+E5)
 
 def getStructureFactor(qGrid, atomicPositions, atomicNumbers):

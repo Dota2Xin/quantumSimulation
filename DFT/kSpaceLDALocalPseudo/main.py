@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 def main():
     # Simple Cubic Helium System
-    a=6.0
+    a=10.0
 
     initialConditions = {
         # 1. Kinetic energy cutoff (Hartree)
@@ -32,12 +32,12 @@ def main():
         # 4. Calculation Parameters
         'nBand': 1,  # He has 2 electrons, which fill 1 spin-degenerate band
         'bzSetting': "Single",
-        'rC': 0.5,  # Potential cutoff radius (Bohr)
+        'rC': 0.2,  # Potential cutoff radius (Bohr)
         'tol':1e-2
     }
-    _, currEnergy = mainSCFLoop(initialConditions)
-    return 0
-    daArr=np.linspace(-1.0,1.0, 3)
+    #_, currEnergy = mainSCFLoop(initialConditions)
+    #return 0
+    daArr=np.linspace(-0.1,0.1, 21)
     energies=np.zeros_like(daArr)
     for i in range(len(daArr)):
         da=daArr[i]
@@ -50,6 +50,7 @@ def main():
         atomicPositions=np.asarray([
             [aTemp/2,aTemp/2,aTemp/2]  # Center of the cell
         ])
+        print("SWAG SWAG SWAG")
         initialConditions['latticeVecs']=latticeVecs
         initialConditions['atomicPositions']=atomicPositions
         _, currEnergy= mainSCFLoop(initialConditions)
