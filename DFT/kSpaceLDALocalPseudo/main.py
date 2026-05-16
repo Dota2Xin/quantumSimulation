@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 
 def main():
+    #DONE TESTING, MOVE ON TO NON-LOCAL PSEUDOPOTENTIAL NOW
     # Simple Cubic Helium System
     a=10.0
 
