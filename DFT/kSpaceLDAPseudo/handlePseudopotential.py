@@ -47,3 +47,29 @@ def getPseudo(element):
         radialGrid = np.fromstring(mesh_element.text, sep=' ')
 
     return root, metadata, radialGrid
+
+
+def printTreeStructure(element, depth=0):
+    # Create indentation proportional to the depth in the XML tree
+    indent = "  " * depth
+
+    # Format the attributes if they exist
+    attrs = " ".join([f'{k}="{v}"' for k, v in element.items()])
+    attr_str = f" [{attrs}]" if attrs else ""
+
+    # Inspect text content (strip whitespace and check length)
+    text_summary = ""
+    if element.text and element.text.strip():
+        clean_text = element.text.strip()
+        # If it's a long data block, summarize it rather than printing raw numbers
+        if len(clean_text) > 40:
+            text_summary = f" -> (Data Block: {len(clean_text.split())} values)"
+        else:
+            text_summary = f" -> '{clean_text}'"
+
+    # Print the current node details
+    print(f"{indent}<{element.tag}>{attr_str}{text_summary}")
+
+    # Recursively traverse child elements
+    for child in element:
+        printTreeStructure(child, depth + 1)
