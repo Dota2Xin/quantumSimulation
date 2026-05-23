@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as ET
+from scipy.special import spherical_jn
 import numpy as np
 
 def getProjectors():
@@ -7,8 +8,17 @@ def getProjectors():
 def actProjectors():
     return 0
 
+def projectorIntegral(r, rab, projector, q, l):
+    bessel=spherical_jn(l, q*r)
+    return np.sum(bessel*projector*rab)
+
 def getLocalPart():
     return 0
+
+def localIntegral(r, rab, pseudo, gaussian, G, rC):
+    radial=pseudo-gaussian(r, rC)
+    rest=np.sin(G*r)*r
+    return np.sum(radial*rest*rab)
 
 def getCoreDensity():
     return 0
