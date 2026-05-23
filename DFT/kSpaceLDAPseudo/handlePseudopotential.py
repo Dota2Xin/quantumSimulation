@@ -2,8 +2,23 @@ import xml.etree.ElementTree as ET
 from scipy.special import spherical_jn
 import numpy as np
 
-def getProjectors():
-    return 0
+def getProjectors(root):
+    nlPP=root.find('PP_NONLOCAL')
+    projectors=[]
+    D=0
+    for child in nlPP:
+        if "BETA" in child.tag:
+            print(child)
+            print(child.attrib)
+            data=np.fromstring(child.text, sep=' ')
+            print(data)
+            print(len(data))
+            projectors.append(child)
+        else:
+            print(child)
+            print(child.attrib)
+            D=child
+    return projectors, D
 
 def actProjectors():
     return 0
