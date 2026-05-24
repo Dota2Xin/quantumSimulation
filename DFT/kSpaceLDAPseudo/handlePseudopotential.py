@@ -2,23 +2,27 @@ import xml.etree.ElementTree as ET
 from scipy.special import spherical_jn
 import numpy as np
 
+#UPDATE TO MATCH WITH THE hbar=m_e=e=Angstrom=1 units we're using
+
 def getProjectors(root):
     nlPP=root.find('PP_NONLOCAL')
     projectors=[]
+    angularMomenta=[]
+    cutoffs=[]
     D=0
     for child in nlPP:
         if "BETA" in child.tag:
-            print(child)
-            print(child.attrib)
+            dict=child.attrib
+            angularMomenta.append(dict['angular_momentum'])
+            cutoffs.append(dict['cutoff_radius_index'])
             data=np.fromstring(child.text, sep=' ')
-            print(data)
-            print(len(data))
-            projectors.append(child)
+            projectors.append(data)
         else:
-            print(child)
-            print(child.attrib)
-            D=child
-    return projectors, D
+            data=np.fromstring(child.text, sep=' ')
+            D=data
+    D=D.reshape((len(projectors), len(projectors)))
+
+    return projectors, angularMomenta, cutoffs, D
 
 def actProjectors():
     return 0
@@ -27,8 +31,10 @@ def projectorIntegral(r, rab, projector, q, l):
     bessel=spherical_jn(l, q*r)
     return np.sum(bessel*projector*rab)
 
-def getLocalPart():
-    return 0
+def getLocalPart(root):
+    localPP=root.find('PP_LOCAL')
+    localPseudo=np.fromstring(localPP.text, sep=' ')
+    return localPseudo
 
 def localIntegral(r, rab, pseudo, gaussian, G, rC):
     radial=pseudo-gaussian(r, rC)
