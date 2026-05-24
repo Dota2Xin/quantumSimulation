@@ -62,7 +62,7 @@ def localIntegral(r, rab, pseudo, gaussian, G, rC):
     rest=np.sin(G*r)*r
     return np.sum(radial*rest*rab)
 
-#MAYBE HAVE TO SCALE BY 4pi*r^2
+#MAYBE HAVE TO SCALE (up or down) BY 4pi*r^2
 def getCoreDensity(root):
     xcCC = root.find('PP_NLCC')
     coreDensity = np.fromstring(xcCC.text, sep=' ')
@@ -73,7 +73,7 @@ def getCoreDensity(root):
 def transformCoreDensity():
     return 0
 
-#MAYBE HAVE TO SCALE BY 4pi*r^2
+#MAYBE HAVE TO SCALE (up or down) BY 4pi*r^2
 def getInitialDensity(root):
     valence = root.find('PP_RHOATOM')
     valenceDensity = np.fromstring(valence.text, sep=' ')
