@@ -3,6 +3,27 @@ from scipy.special import spherical_jn
 import numpy as np
 
 #UPDATE TO MATCH WITH THE hbar=m_e=e=Angstrom=1 units we're using
+'''
+The Unit Converstion Table:
+Me:
+e^2=1
+4pi epsilon_0=1
+hbar=1
+m_e=1
+1 bohr=1 (a0=hbar^2/(m_e e^2))
+Unit of energy= Hartree
+Pseudo:
+e^2=2
+hbar=1
+4pi epsilon_0=1
+m_e=1/2
+1 bohr=1 (a0=hbar^2/(m_e e^2))
+Unit of energy= Rydberg
+
+1 Hartree=2 Rydberg 
+Scale potentials down by 2, scale states not at all.
+'''
+scaleFactor=1/2
 
 def getProjectors(root):
     nlPP=root.find('PP_NONLOCAL')
@@ -19,7 +40,7 @@ def getProjectors(root):
             projectors.append(data)
         else:
             data=np.fromstring(child.text, sep=' ')
-            D=data
+            D=data*scaleFactor
     D=D.reshape((len(projectors), len(projectors)))
 
     return projectors, angularMomenta, cutoffs, D
@@ -34,7 +55,7 @@ def projectorIntegral(r, rab, projector, q, l):
 def getLocalPart(root):
     localPP=root.find('PP_LOCAL')
     localPseudo=np.fromstring(localPP.text, sep=' ')
-    return localPseudo
+    return localPseudo*scaleFactor
 
 def localIntegral(r, rab, pseudo, gaussian, G, rC):
     radial=pseudo-gaussian(r, rC)
