@@ -6,7 +6,7 @@ def main():
     print(radialGrid)
     print(root)
     #getProjectors(root)
-    printTreeStructure(root)
+    #printTreeStructure(root)
     #getLocalPart(root)
     return 0
 
