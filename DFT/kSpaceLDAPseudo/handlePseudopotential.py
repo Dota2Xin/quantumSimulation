@@ -69,9 +69,9 @@ def getCoreDensity(root):
     print(coreDensity)
     return coreDensity
 
-
-def transformCoreDensity():
-    return 0
+def coreDensityIntegral(coreDensity, r,rab, G):
+    integrand=coreDensity*r*np.sin(r*G)
+    return np.sum(integrand*rab)
 
 #MAYBE HAVE TO SCALE (up or down) BY 4pi*r^2
 def getInitialDensity(root):
@@ -80,9 +80,9 @@ def getInitialDensity(root):
     print(valenceDensity)
     return valenceDensity
 
-
-def transformInitialDensity():
-    return 0
+def initialDensityIntegral(initialDensity,r,rab,G):
+    integrand = initialDensity * r * np.sin(r * G)
+    return np.sum(integrand * rab)
 
 def getPseudo(element):
     with open('oncvPseudos/'+element+'.upf', 'r', encoding='utf-8') as f:
