@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 from scipy.special import spherical_jn
+from scipy.special import sph_harm_y
 import numpy as np
 
 #UPDATE TO MATCH WITH THE hbar=m_e=e=Angstrom=1 units we're using
@@ -45,8 +46,27 @@ def getProjectors(root):
 
     return projectors, angularMomenta, cutoffs, D
 
-def actProjectors():
+def getTheta(qGrid):
+    '''
+    on a given vector we do:
+    theta=np.arccos(q_z/|q|)
+    '''
     return 0
+
+def getPhi(qGrid):
+    '''
+        on a given vector we do:
+        phi=np.arctan2(q_y, q_x)
+    '''
+    return 0
+
+def getProjectorVec(projectorIntegral, qGrid, position,l,m):
+    expArg=np.einsum('ijkl, l->ijk')
+    pre=4*np.pi*(1j**l)*np.exp(-1j*expArg)
+    thetaGrid=getTheta(qGrid)
+    phiGrid=getPhi(qGrid)
+    pre=pre*sph_harm_y(l,m, thetaGrid, phiGrid)
+    return projectorIntegral*pre
 
 def projectorIntegral(r, rab, projector, q, l):
     bessel=spherical_jn(l, q*r)
