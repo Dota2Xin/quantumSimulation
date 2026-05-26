@@ -69,8 +69,8 @@ def getProjectorVec(projectorIntegral, qGrid, position,l,m):
     return projectorIntegral*pre
 
 def projectorIntegral(r, rab, projector, q, l):
-    bessel=spherical_jn(l, q*r)
-    return np.sum(bessel*projector*rab)
+    bessel=spherical_jn(l, np.outer(q,r))
+    return np.sum(bessel*projector*rab, axis=-1)
 
 def getLocalPart(root):
     localPP=root.find('PP_LOCAL')
@@ -79,8 +79,8 @@ def getLocalPart(root):
 
 def localIntegral(r, rab, pseudo, gaussian, G, rC):
     radial=pseudo-gaussian(r, rC)
-    rest=np.sin(G*r)*r
-    return np.sum(radial*rest*rab)
+    rest=np.sin(np.outer(G,r))*r
+    return np.sum(rest*radial*rab, axis=-1)
 
 #MAYBE HAVE TO SCALE (up or down) BY 4pi*r^2
 def getCoreDensity(root):
@@ -90,8 +90,8 @@ def getCoreDensity(root):
     return coreDensity
 
 def coreDensityIntegral(coreDensity, r,rab, G):
-    integrand=coreDensity*r*np.sin(r*G)
-    return np.sum(integrand*rab)
+    integrand=np.sin(np.outer(G,r))*coreDensity*r
+    return np.sum(integrand*rab, axis=-1)
 
 #MAYBE HAVE TO SCALE (up or down) BY 4pi*r^2
 def getInitialDensity(root):
@@ -101,8 +101,8 @@ def getInitialDensity(root):
     return valenceDensity
 
 def initialDensityIntegral(initialDensity,r,rab,G):
-    integrand = initialDensity * r * np.sin(r * G)
-    return np.sum(integrand * rab)
+    integrand = np.sin(np.outer(G, r)) * initialDensity * r
+    return np.sum(integrand * rab, axis=-1)
 
 def getPseudo(element):
     with open('oncvPseudos/'+element+'.upf', 'r', encoding='utf-8') as f:
