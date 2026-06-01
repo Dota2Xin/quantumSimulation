@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 from scipy.special import spherical_jn
 from scipy.special import sph_harm_y
+from scipy.interpolate import CubicSpline
 import numpy as np
 
 #UPDATE TO MATCH WITH THE hbar=m_e=e=Angstrom=1 units we're using
@@ -48,10 +49,12 @@ def getProjectors(root):
 
 #spline interpolation
 def splineInterpolate(q, data):
-    return 0
+    interpolation=CubicSpline(q, data)
+    return interpolation
 
-def fillInterpolation(splineData, fillGrid):
-    return 0
+def fillInterpolation(spline, fillGrid):
+    norms=np.linalg.norm(fillGrid, axis=-1)
+    return spline(norms)
 
 def getTheta(qGrid):
     '''
