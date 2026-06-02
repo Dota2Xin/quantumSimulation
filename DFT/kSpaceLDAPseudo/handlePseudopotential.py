@@ -27,6 +27,11 @@ Scale potentials down by 2, scale states not at all.
 '''
 scaleFactor=1/2
 
+def getZ(root):
+    header = root.find("PP_HEADER")
+    z_valence = float(header.get("z_valence").strip())
+    return float(z_valence)
+
 def getProjectors(root):
     nlPP=root.find('PP_NONLOCAL')
     projectors=[]
@@ -148,7 +153,14 @@ def getPseudo(element):
         # np.fromstring handles any arbitrary spaces or newlines gracefully
         radialGrid = np.fromstring(mesh_element.text, sep=' ')
 
-    return root, metadata, radialGrid
+    mesh_element = root.find("PP_MESH/PP_RAB")
+    rab = None
+    if mesh_element is not None and mesh_element.text:
+        # np.fromstring handles any arbitrary spaces or newlines gracefully
+        rab= np.fromstring(mesh_element.text, sep=' ')
+
+
+    return root, metadata, radialGrid, rab
 
 
 def printTreeStructure(element, depth=0):
