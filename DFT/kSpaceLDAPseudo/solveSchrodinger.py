@@ -14,19 +14,18 @@ def calcHartree(density, qGrid,cellVol):
 
     return result
 
-def getStructureFactor(qGrid, atomicPositions, atomicNumbers, cellVol):
+def getPrimalStructureFactor(qGrid, atomicPositions, atomicNumbers, cellVol):
     expArg=np.einsum('ijml,kl->ijmk',qGrid, atomicPositions, dtype=np.complex64, casting='unsafe')
     structureFactor=(atomicNumbers*np.exp(1j*expArg)).sum(axis=-1)
 
     return structureFactor/cellVol
 
-def getExternalPotential(qGrid,atomicPositions, atomicNumbers, rC, cellVol):
-    structureFactor=getStructureFactor(qGrid, atomicPositions, atomicNumbers, cellVol)
+def getExternalPotentialLocal(integrals, qGrid,atomicPositions, atomicNumbers, rC, cellVol):
+    structureFactor=getPrimalStructureFactor(qGrid, atomicPositions, atomicNumbers, cellVol)
     qNorm=np.linalg.norm(qGrid, axis=-1)
-    structureFactor=structureFactor*np.exp(-0.5*(rC*qNorm)**2.0)
+    structureFactor=structureFactor*np.exp(-0.5*(rC*qNorm)**2.0)*integrals
     result=-(4*np.pi)*np.divide(structureFactor, (qNorm**2.0), out=np.zeros_like(structureFactor), where=(qNorm!=0))
     return result
-
 
 #r_s<1
 def corr1(x):
@@ -49,7 +48,8 @@ def functionalLDA(realDensity):
     return exchange+correlation
 
 #assumes it has a functional in real-space
-def getExchangeCorrelation(density, cellVol):
+def getExchangeCorrelation(densityTemp, coreCorrection,cellVol):
+    density=densityTemp+coreCorrection
     NGrid=np.prod(density.shape)
     tempDensity=np.fft.ifftshift(density)
     realDensity=np.fft.ifftn(tempDensity)*NGrid
@@ -58,9 +58,17 @@ def getExchangeCorrelation(density, cellVol):
     exchangeCorrelation=np.fft.fftn(exchangeCorrelationReal)/NGrid
     exchangeCorrelation=np.fft.fftshift(exchangeCorrelation)
     return exchangeCorrelation
-
-def getPotential(qGridBig,density, atomicPositions, atomicNumbers, rC, cellVol):
-    return getExchangeCorrelation(density, cellVol)+getExternalPotential(qGridBig, atomicPositions, atomicNumbers, rC, cellVol)+calcHartree(density, qGridBig, cellVol)
+#qGridBig,density, atomicPositions, atomicNumbers, rC, cellVol
+def getPotential(potentialArgs):
+    qGridBig=potentialArgs['qGridBig']
+    density=potentialArgs['density']
+    atomicPositions=potentialArgs['atomicPositions']
+    atomicNumbers=potentialArgs['atomicNumbers']
+    rC=potentialArgs['rC']
+    cellVol=potentialArgs['cellVOl']
+    coreCorrection=potentialArgs['coreCorrection']
+    localIntegrals=potentialArgs['localIntegrals']
+    return getExchangeCorrelation(density,coreCorrection, cellVol)+getExternalPotentialLocal(localIntegrals, qGridBig, atomicPositions, atomicNumbers, rC, cellVol)+calcHartree(density, qGridBig, cellVol)
 
 def actHamiltonianGrid(state, V,qGridSmall, k):
     #outState=np.copy(state)

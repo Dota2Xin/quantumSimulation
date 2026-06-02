@@ -1,12 +1,11 @@
 from solveSchrodinger import *
-from handleSCF import *
+from scfSolver import *
 import matplotlib.pyplot as plt
 
 
-
+# START BY ASSUMING ALL SPECIES ARE THE SAME FOR NOW AND THEN WE ADD IN SPECIES ONCE IT WORKS
 
 def main():
-    #DONE TESTING, MOVE ON TO NON-LOCAL PSEUDOPOTENTIAL NOW
     # Simple Cubic Helium System
     a=10.0
 

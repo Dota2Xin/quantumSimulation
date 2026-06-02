@@ -90,8 +90,11 @@ def getLocalPart(root):
     localPseudo=np.fromstring(localPP.text, sep=' ')
     return localPseudo*scaleFactor
 
-def localIntegral(r, rab, pseudo, gaussian, G, rC):
-    radial=pseudo-gaussian(r, rC)
+def gaussianLocal(Z, r,rC):
+    return (Z/((rC*np.sqrt(np.pi))**3.0))*np.exp(-((r/rC)**2.0))
+
+def localIntegral(r, rab, pseudo, gaussian, G, rC,Z):
+    radial=pseudo-gaussian(Z, r, rC)
     rest=np.sin(np.outer(G,r))*r
     return np.sum(rest*radial*rab, axis=-1)
 
