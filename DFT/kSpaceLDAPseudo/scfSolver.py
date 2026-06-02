@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from handlePseudopotential import *
 from solveSchrodinger import *
 from calculateEnergies import *
 
@@ -88,6 +89,48 @@ def getStartingDensity(atomicNumbers, cellVol, bigGrid, n1, n2, n3):
 def getOccupations(nBand):
     return nBand
 
+#calculates all the integrals we need to do for our pseudo-potential at the start of the simulation.
+def getIntegrals(integralArgs):
+    qGridBig=integralArgs['qGridBig']
+    qGridSmall=integralArgs['qGridSmall']
+    r=integralArgs['r']
+    rab=integralArgs['rab']
+    rC=integralArgs['rC']
+    Z=integralArgs['Z']
+    localPseudo=integralArgs['localPseudo']
+    coreDensity=integralArgs['coreDensity']
+    projectors=integralArgs['projectors']
+    angularMomenta=integralArgs['angularMomenta']
+
+    qNormBig=np.linalg.norm(qGridBig, axis=-1)
+    qNormSmall=np.linalg.norm(qGridSmall, axis=-1)
+
+    qMaxBig=np.max(qNormBig)
+    qMaxSmall=np.max(qNormSmall)
+
+    bigQ=np.linspace(0, qMaxBig, 100)
+    smallQ=np.linspace(0,qMaxSmall,100)
+
+    # interpolation of integrals in local pseudo-potential
+    localIntegralCalc=localIntegral(r,rab, localPseudo, gaussianLocal, bigQ, rC, Z)
+    localInterp=splineInterpolate(bigQ, localIntegralCalc)
+    localPart=fillInterpolation(localInterp, qNormBig)
+
+    #interpolation of integrals in core correction density
+    coreIntegralCalc=coreDensityIntegral(coreDensity,r,rab,bigQ)
+    coreCorrectionInterp=splineInterpolate(bigQ, coreIntegralCalc)
+    coreCorrection=fillInterpolation(coreCorrectionInterp, qNormBig)
+
+    #interpolation of integrals in our projector
+    projectorResult=[]
+    for i in range(len(projectors)):
+        l=angularMomenta[i]
+        projector=projectors[i]
+        currIntegral=projectorIntegral(r,rab, projector, smallQ, l)
+        projectorInterp=splineInterpolate(smallQ, currIntegral)
+        projectorResult.append(fillInterpolation(projectorInterp, qNormSmall))
+    return localPart, coreCorrection, np.asarray(projectorResult)
+
 def mainSCFLoop(initialConditions):
     ecutwfc=initialConditions['ecutwfc']
     atomicPositions=initialConditions['atomicPositions']
@@ -116,6 +159,13 @@ def mainSCFLoop(initialConditions):
     density=getStartingDensity(atomicNumbers,cellVol, bigGrid, n1Big, n2Big, n3Big)
     relDiff = 1e5
     tol = 1e-1
+
+    #pseudopotential handling
+    root, metadata, radialGrid = getPseudo('Cr')
+    coreDensity = getCoreDensity(root)
+    localPseudo = getLocalPart(root)
+    projectors, angularMomenta, cutoffs, D=getProjectors(root)
+
 
     #dict to make things more readable
     solveSchrodingerInputDict={}

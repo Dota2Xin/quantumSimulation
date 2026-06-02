@@ -80,7 +80,6 @@ def actHamiltonianGrid(state, V,qGridSmall, k):
     outState+=0.5*np.linalg.norm((qGridSmall+k), axis=-1)*state
     return outState
 
-
 def padZeros(n1Arr, n2Arr, n3Arr, smallGrid):
     n1=len(n1Arr)
     d1=int((n1-1)/2)
@@ -145,8 +144,21 @@ def solveSchrodinger(inputDict):
     cellVol=inputDict['cellVol']
     k=inputDict['k']
     l=inputDict['nBand']
+    coreCorrection=inputDict['coreCorrection']
+    localIntegrals=inputDict['localIntegrals']
 
-    VPotential=getPotential(bigGrid,density,atomicPositions, atomicNumbers, rC, cellVol)
+    potentialArgs={}
+    potentialArgs['qGridBig']=bigGrid
+    potentialArgs['density']=density
+    potentialArgs['atomicPositions']=atomicPositions
+    potentialArgs['atomicNumbers']=atomicNumbers
+    potentialArgs['rC']=rC
+    potentialArgs['cellVOl']= cellVol
+    potentialArgs['coreCorrection']=coreCorrection
+    potentialArgs['localIntegrals']=localIntegrals
+
+    VPotential=getPotential(potentialArgs)
+
     RealV=np.fft.ifftn(np.fft.ifftshift(VPotential)).real*np.prod(np.shape(VPotential))
 
     hamiltonianArgs={}

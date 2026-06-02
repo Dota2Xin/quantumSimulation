@@ -102,7 +102,6 @@ def localIntegral(r, rab, pseudo, gaussian, G, rC,Z):
 def getCoreDensity(root):
     xcCC = root.find('PP_NLCC')
     coreDensity = np.fromstring(xcCC.text, sep=' ')
-    print(coreDensity)
     return coreDensity
 
 def coreDensityIntegral(coreDensity, r,rab, G):
@@ -113,7 +112,6 @@ def coreDensityIntegral(coreDensity, r,rab, G):
 def getInitialDensity(root):
     valence = root.find('PP_RHOATOM')
     valenceDensity = np.fromstring(valence.text, sep=' ')
-    print(valenceDensity)
     return valenceDensity
 
 def initialDensityIntegral(initialDensity,r,rab,G):
