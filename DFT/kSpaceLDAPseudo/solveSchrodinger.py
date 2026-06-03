@@ -94,6 +94,10 @@ def padZeros(n1Arr, n2Arr, n3Arr, smallGrid):
 
     return bigGrid
 
+def makeW(projectorIntegrals, state):
+
+    return 0
+
 def actHamiltonianVec(state, hamiltonianArgs):
     V=hamiltonianArgs['V']
     qGridSmall=hamiltonianArgs['qGridSmall']

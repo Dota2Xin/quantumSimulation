@@ -150,6 +150,9 @@ def getIntegrals(integralArgs):
         projectorResult.append(fillInterpolation(projectorInterp, qNormSmall))
     return localPart, coreCorrection, np.asarray(projectorResult)
 
+def makeBeta(projectorIntegrals, qGridSmall, angularMomenta):
+    return 0
+
 def mainSCFLoop(initialConditions):
     ecutwfc=initialConditions['ecutwfc']
     atomicPositions=initialConditions['atomicPositions']
@@ -229,6 +232,8 @@ def mainSCFLoop(initialConditions):
     solveSchrodingerInputDict['n1']=n1
     solveSchrodingerInputDict['n2']=n2
     solveSchrodingerInputDict['n3']=n3
+    solveSchrodingerInputDict['localIntegrals']=localIntegrals[0]
+    solveSchrodingerInputDict['coreCorrection']=coreIntegrals[0]
     #fill out with rest of args as needed
 
     energyInputDict={}
