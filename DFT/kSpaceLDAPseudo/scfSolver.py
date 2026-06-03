@@ -150,7 +150,13 @@ def getIntegrals(integralArgs):
         projectorResult.append(fillInterpolation(projectorInterp, qNormSmall))
     return localPart, coreCorrection, np.asarray(projectorResult)
 
-def makeBeta(projectorIntegrals, qGridSmall, angularMomenta):
+def makeBeta(projectorIntegrals, qGridSmall, angularMomenta, atomicNumbersEff):
+    #we want to make the projectors big efficiently
+    #following this we want to scale every term by the appropriate spherical harmonic factor
+    #and factor of our imaginary number.
+    #do we do the m-scaling earlier?
+    #if we can do the index wrapping easily then unrolling is certainly the way to go here.
+    #otherwise the final arrays will be inhomogenous and the cache will be annihilated.
     return 0
 
 def mainSCFLoop(initialConditions):
