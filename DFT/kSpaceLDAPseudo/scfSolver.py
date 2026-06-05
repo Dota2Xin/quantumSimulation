@@ -297,6 +297,8 @@ def mainSCFLoop(initialConditions):
         beta=makeBeta(projectorIntegral, smallGrid, angularMomenta)
         betas.append(beta)
 
+    structuredBetas, posForward,posBackward=giveBetasStructure(betas, atomicPositions, smallGrid, atomicNumbers, species, speciesDict)
+
     #dict to make things more readable
     solveSchrodingerInputDict={}
     solveSchrodingerInputDict['density']=density

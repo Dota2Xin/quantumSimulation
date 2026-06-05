@@ -94,6 +94,29 @@ def padZeros(n1Arr, n2Arr, n3Arr, smallGrid):
 
     return bigGrid
 
+#a prototype to just get something that works
+def actNonLocal(state,nonLocalArgs):
+    D=nonLocalArgs['D']
+    structuredBetas=nonLocalArgs['structuredBetas']
+    posForward=nonLocalArgs['posForward']
+    posBackward=nonLocalArgs['posBackward']
+    atomicPositions=nonLocalArgs['atomicPositions']
+    atomicNumbers=nonLocalArgs['atomicNumbers']
+    speciesDict=nonLocalArgs['speciesDict']
+    angularMomentas=nonLocalArgs['angularMomenta']
+
+    out=np.zeros_like(state)
+    #loop over positions->l->m->i projectors inside l?
+    #need a good way to track this
+    #maybe the linear algebra will be self-evident after writing our answer this way.
+    for i in range(len(atomicPositions)):
+        currNum=atomicNumbers[i]
+        species=speciesDict[currNum]
+        angularMomenta=angularMomentas[species]
+        #get specific position from a posForward/posBackward call
+        posBeta=structuredBetas[species]
+    return 0
+
 def makeW(projectorIntegrals, state):
 
     return 0
