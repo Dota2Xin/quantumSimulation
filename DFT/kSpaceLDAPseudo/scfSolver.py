@@ -196,13 +196,44 @@ def makeBeta(projectorIntegrals, qGridSmall, angularMomenta):
 
     return betas
 
+#I think we store an array for positions for each type of species and we just have a dictionary that
+#associates each atom with the index in its species' position betas
+def giveBetasStructure(betas, atomicPositions, qGridSmall, atomicNumbers, species, speciesDict):
+    positionMapForward={}
+    positionMapBackward={}
+    positionCounts={}
+    for i in range(len(atomicPositions)):
+        currSpecies=speciesDict[atomicNumbers[i]]
+        if currSpecies in positionCounts:
+            positionMapForward[i]=positionCounts[currSpecies]
+            positionMapBackward[positionCounts[currSpecies]]=i
+            positionCounts[currSpecies]+=1
+        else:
+            positionMapForward[i]=0
+            positionMapBackward[0] = i
+            positionCounts[currSpecies]=1
+
+    structuredBetas=[]
+    for i in range(len(species)):
+        shapeBase=(positionCounts[i])+betas[i].shape
+        positionBetas=np.zeros(shapeBase, dtype=np.complex64)
+        for j in range(len(positionBetas)):
+            position=positionMapBackward[j]
+            expArg = np.einsum('ijkl, l->ijk', qGridSmall, position)
+            posGrid=np.exp(-1j*expArg)
+            positionBetas[j]=posGrid*betas[i]
+        structuredBetas.append(positionBetas)
+    return structuredBetas, positionMapForward, positionMapBackward
+
 def mainSCFLoop(initialConditions):
     ecutwfc=initialConditions['ecutwfc']
     atomicPositions=initialConditions['atomicPositions']
     atomicNumbers=initialConditions['atomicNumbers']
     atomicMasses=initialConditions['atomicMasses']
     species=initialConditions['species']
-
+    speciesDict={}
+    for i in range(len(species)):
+        speciesDict[species[i]]=i
     nBand=initialConditions['nBand']
     bzSetting=initialConditions['bzSetting']
 

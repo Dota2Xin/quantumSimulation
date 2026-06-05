@@ -61,14 +61,6 @@ def fillInterpolation(spline, fillGrid):
     norms=np.linalg.norm(fillGrid, axis=-1)
     return spline(norms)
 
-def getProjectorVec(projectorIntegral, qGrid, position,l,m):
-    expArg=np.einsum('ijkl, l->ijk', qGrid, position)
-    pre=4*np.pi*(1j**l)*np.exp(-1j*expArg)
-    thetaGrid=getTheta(qGrid)
-    phiGrid=getPhi(qGrid)
-    pre=pre*sph_harm_y(l,m, thetaGrid, phiGrid)
-    return projectorIntegral*pre
-
 def projectorIntegral(r, rab, projector, q, l):
     bessel=spherical_jn(l, np.outer(q,r))
     return np.sum(bessel*projector*rab, axis=-1)
