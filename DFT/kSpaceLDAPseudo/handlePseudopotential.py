@@ -61,23 +61,6 @@ def fillInterpolation(spline, fillGrid):
     norms=np.linalg.norm(fillGrid, axis=-1)
     return spline(norms)
 
-def getTheta(qGrid):
-    '''
-    on a given vector we do:
-    theta=np.arccos(q_z/|q|)
-    '''
-    qNorm=np.linalg.norm(qGrid, axis=-1)
-    theta=np.arccos(np.divide(qGrid[:,:,:,2], qNorm, out=np.zeros_like(qNorm), where=(qNorm!=0)))
-    return theta
-
-def getPhi(qGrid):
-    '''
-        on a given vector we do:
-        phi=np.arctan2(q_y, q_x)
-    '''
-    phi=np.arctan2(qGrid[:,:,:,1], qGrid[:,:,:,0])
-    return phi
-
 def getProjectorVec(projectorIntegral, qGrid, position,l,m):
     expArg=np.einsum('ijkl, l->ijk', qGrid, position)
     pre=4*np.pi*(1j**l)*np.exp(-1j*expArg)

@@ -150,20 +150,58 @@ def getIntegrals(integralArgs):
         projectorResult.append(fillInterpolation(projectorInterp, qNormSmall))
     return localPart, coreCorrection, np.asarray(projectorResult)
 
-def makeBeta(projectorIntegrals, qGridSmall, angularMomenta, atomicNumbersEff):
-    #we want to make the projectors big efficiently
-    #following this we want to scale every term by the appropriate spherical harmonic factor
-    #and factor of our imaginary number.
-    #do we do the m-scaling earlier?
-    #if we can do the index wrapping easily then unrolling is certainly the way to go here.
-    #otherwise the final arrays will be inhomogenous and the cache will be annihilated.
-    return 0
+def getTotalProjectors(angularMomenta):
+    total=0
+    pairs=[]
+    for i in range(len(angularMomenta)):
+        l=angularMomenta[i]
+        mValues=2*l+1
+        for j in range(mValues):
+            m=j-l
+            pairs.append((l, m, i))
+        total+=2*angularMomenta[i]+1
+    return total, pairs
+
+def getTheta(qGrid):
+    '''
+    on a given vector we do:
+    theta=np.arccos(q_z/|q|)
+    '''
+    qNorm=np.linalg.norm(qGrid, axis=-1)
+    theta=np.arccos(np.divide(qGrid[:,:,:,2], qNorm, out=np.zeros_like(qNorm), where=(qNorm!=0)))
+    return theta
+
+def getPhi(qGrid):
+    '''
+        on a given vector we do:
+        phi=np.arctan2(q_y, q_x)
+    '''
+    phi=np.arctan2(qGrid[:,:,:,1], qGrid[:,:,:,0])
+    return phi
+
+def makeBeta(projectorIntegrals, qGridSmall, angularMomenta):
+    size, pairs=getTotalProjectors(angularMomenta)
+    betas=np.zeros((size, len(qGridSmall), len(qGridSmall[0]), len(qGridSmall[0][0])), dtype=np.complex64)
+
+    thetaGrid=getTheta(qGridSmall)
+    phiGrid=getPhi(qGridSmall)
+
+    for i in range(len(pairs)):
+        m=pairs[i][1]
+        l=pairs[i][0]
+        j=pairs[i][2]
+        currProj=projectorIntegrals[j]*4*np.pi*(1j**l)
+        currProj=currProj*sph_harm_y(l,m, thetaGrid, phiGrid)
+        betas[i]=currProj
+
+    return betas
 
 def mainSCFLoop(initialConditions):
     ecutwfc=initialConditions['ecutwfc']
     atomicPositions=initialConditions['atomicPositions']
     atomicNumbers=initialConditions['atomicNumbers']
     atomicMasses=initialConditions['atomicMasses']
+    species=initialConditions['species']
 
     nBand=initialConditions['nBand']
     bzSetting=initialConditions['bzSetting']
@@ -196,9 +234,10 @@ def mainSCFLoop(initialConditions):
     localIntegrals=[]
     coreIntegrals=[]
     projectorIntegrals=[]
+    betas=[]
 
-    for i in range(len(atomicNumbers)):
-        num=atomicNumbers[i]
+    for i in range(len(species)):
+        num=species[i]
         element=numberToElement[num]
         root, metadata, radialGrid, rab = getPseudo(element)
         Z=getZ(root)
@@ -223,6 +262,9 @@ def mainSCFLoop(initialConditions):
         localIntegrals.append(localIntegral)
         coreIntegrals.append(coreIntegral)
         projectorIntegrals.append(projectorIntegral)
+
+        beta=makeBeta(projectorIntegral, smallGrid, angularMomenta)
+        betas.append(beta)
 
     #dict to make things more readable
     solveSchrodingerInputDict={}
