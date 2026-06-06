@@ -114,7 +114,15 @@ def actNonLocal(state,nonLocalArgs):
         species=speciesDict[currNum]
         angularMomenta=angularMomentas[species]
         #get specific position from a posForward/posBackward call
-        posBeta=structuredBetas[species]
+        posIndex=posForward[i]
+        posBeta=structuredBetas[species][posIndex]
+        curr=0
+        #maybe need map from index in betas to index in D (i.e. pre including m and post including m)
+        for j in range(len(D)):
+            for k in range(len(D[0])):
+
+                curr+=1
+        #have to use the fact D is identity in m space
     return 0
 
 def makeW(projectorIntegrals, state):
